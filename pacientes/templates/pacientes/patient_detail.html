@@ -1,0 +1,93 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ patient.full_name }} - DentalPro{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <a href="{% url 'pacientes:list' %}" class="text-teal-600 hover:text-teal-800 text-sm font-medium mb-4 inline-block">
+            ← Volver a pacientes
+        </a>
+        <h1 class="text-4xl font-bold text-slate-900">{{ patient.full_name }}</h1>
+        <p class="text-slate-600 mt-2">
+            {{ patient.get_document_type_display }}: {{ patient.document_number }}
+        </p>
+    </div>
+    
+    <!-- Tabs con HTMX -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="border-b border-slate-200">
+            <div class="flex gap-0">
+                <button
+                    hx-get="{% url 'pacientes:detail' patient.pk %}"
+                    hx-target="#tab-content"
+                    class="tab-button px-6 py-4 border-b-2 border-teal-600 text-teal-600 font-medium"
+                >
+                    Datos Personales
+                </button>
+                <button
+                    hx-get="{% url 'pacientes:detail' patient.pk %}?tab=clinical"
+                    hx-target="#tab-content"
+                    class="tab-button px-6 py-4 border-b-2 border-transparent text-slate-600 hover:text-slate-900 font-medium transition"
+                >
+                    Historia Clínica
+                </button>
+                <button
+                    hx-get="{% url 'pacientes:detail' patient.pk %}?tab=odontogram"
+                    hx-target="#tab-content"
+                    class="tab-button px-6 py-4 border-b-2 border-transparent text-slate-600 hover:text-slate-900 font-medium transition"
+                >
+                    Odontograma
+                </button>
+            </div>
+        </div>
+        
+        <!-- Contenido de tabs -->
+        <div id="tab-content" class="p-6">
+            <!-- Tab: Datos Personales -->
+            <div class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Información Personal -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-900 mb-4">Información Personal</h3>
+                        <dl class="space-y-4">
+                            <div>
+                                <dt class="text-sm font-medium text-slate-600">Fecha de Nacimiento</dt>
+                                <dd class="text-sm text-slate-900">
+                                    {{ patient.birth_date|date:"d/m/Y" }} ({{ patient.age }} años)
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-slate-600">Género</dt>
+                                <dd class="text-sm text-slate-900">
+                                    {{ patient.get_gender_display|default:"—" }}
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                    
+                    <!-- Contacto -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-900 mb-4">Contacto</h3>
+                        <dl class="space-y-4">
+                            <div>
+                                <dt class="text-sm font-medium text-slate-600">Teléfono</dt>
+                                <dd class="text-sm text-slate-900">{{ patient.phone|default:"—" }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-slate-600">Correo Electrónico</dt>
+                                <dd class="text-sm text-slate-900">{{ patient.email|default:"—" }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-slate-600">Dirección</dt>
+                                <dd class="text-sm text-slate-900">{{ patient.address|default:"—" }}</dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

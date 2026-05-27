@@ -1,0 +1,94 @@
+<!-- Partial: Resultados de listado de pacientes -->
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    {% if object_list %}
+        <table class="w-full">
+            <thead class="bg-slate-100 border-b">
+                <tr>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-slate-900">Nombre</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-slate-900">Documento</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-slate-900">Teléfono</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-slate-900">Edad</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-slate-900">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for patient in object_list %}
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 text-sm text-slate-900">
+                            <a href="{% url 'pacientes:detail' patient.pk %}" class="text-teal-600 hover:underline font-medium">
+                                {{ patient.full_name }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-600">
+                            {{ patient.get_document_type_display }} {{ patient.document_number }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-600">
+                            {{ patient.phone|default:"—" }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-600">
+                            {% if patient.birth_date %}
+                                {{ patient.age }} años
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            <a
+                                href="{% url 'pacientes:detail' patient.pk %}"
+                                class="text-teal-600 hover:text-teal-800 font-medium transition"
+                            >
+                                Ver
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Paginación -->
+        {% if is_paginated %}
+            <div class="bg-slate-50 px-6 py-4 border-t flex items-center justify-between">
+                <div class="text-sm text-slate-600">
+                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                    ({{ page_obj.paginator.count }} pacientes)
+                </div>
+                <div class="flex gap-2">
+                    {% if page_obj.has_previous %}
+                        <a
+                            href="?page=1"
+                            class="px-3 py-2 text-sm bg-white border border-slate-300 rounded hover:bg-slate-50 transition"
+                        >
+                            Primera
+                        </a>
+                        <a
+                            href="?page={{ page_obj.previous_page_number }}"
+                            class="px-3 py-2 text-sm bg-white border border-slate-300 rounded hover:bg-slate-50 transition"
+                        >
+                            ← Anterior
+                        </a>
+                    {% endif %}
+                    
+                    {% if page_obj.has_next %}
+                        <a
+                            href="?page={{ page_obj.next_page_number }}"
+                            class="px-3 py-2 text-sm bg-white border border-slate-300 rounded hover:bg-slate-50 transition"
+                        >
+                            Siguiente →
+                        </a>
+                        <a
+                            href="?page={{ page_obj.paginator.num_pages }}"
+                            class="px-3 py-2 text-sm bg-white border border-slate-300 rounded hover:bg-slate-50 transition"
+                        >
+                            Última
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="p-12 text-center">
+            <p class="text-slate-600 text-lg mb-4">No se encontraron pacientes.</p>
+            <p class="text-slate-500 text-sm">Intenta otra búsqueda o crea un nuevo paciente.</p>
+        </div>
+    {% endif %}
+</div>

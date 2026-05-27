@@ -1,0 +1,89 @@
+<!-- Componente: Odontograma SVG (Sistema FDI) -->
+<div class="bg-white rounded-lg shadow p-6 max-w-2xl mx-auto">
+    <h3 class="text-lg font-semibold text-slate-900 mb-4">Odontograma</h3>
+    
+    <svg
+        viewBox="0 0 800 400"
+        xmlns="http://www.w3.org/2000/svg"
+        class="w-full h-auto border border-slate-200 rounded"
+    >
+        <!-- Título -->
+        <text x="400" y="30" text-anchor="middle" class="text-lg font-bold fill-slate-900">
+            Sistema FDI - Cuadrantes
+        </text>
+        
+        <!-- Línea divisoria horizontal central -->
+        <line x1="50" y1="200" x2="750" y2="200" stroke="#e2e8f0" stroke-width="2"/>
+        
+        <!-- Línea divisoria vertical central -->
+        <line x1="400" y1="80" x2="400" y2="350" stroke="#e2e8f0" stroke-width="2"/>
+        
+        <!-- CUADRANTE 1 (Superior Derecho): Dientes 11-18 -->
+        <!-- Diente 11 (Incisivo Central Superior Derecho) -->
+        <g class="tooth healthy" data-tooth="11">
+            <path
+                d="M 450 100 L 480 100 L 485 150 L 445 150 Z"
+                class="fill-teal-100 stroke-teal-600 stroke-2"
+            />
+            <text x="465" y="125" text-anchor="middle" class="text-sm font-bold fill-slate-900">11</text>
+        </g>
+        
+        <!-- Diente 12 (Incisivo Lateral Superior Derecho) -->
+        <g class="tooth healthy" data-tooth="12">
+            <path
+                d="M 490 100 L 520 100 L 525 150 L 485 150 Z"
+                class="fill-teal-100 stroke-teal-600 stroke-2"
+            />
+            <text x="505" y="125" text-anchor="middle" class="text-sm font-bold fill-slate-900">12</text>
+        </g>
+        
+        <!-- CUADRANTE 4 (Inferior Derecho): Dientes 41-48 -->
+        <!-- Diente 46 (Primer Molar Inferior Derecho) -->
+        <g class="tooth healthy" data-tooth="46">
+            <path
+                d="M 480 250 L 530 250 L 535 320 L 475 320 Z"
+                class="fill-teal-100 stroke-teal-600 stroke-2"
+            />
+            <text x="505" y="285" text-anchor="middle" class="text-sm font-bold fill-slate-900">46</text>
+        </g>
+        
+        <!-- Diente 47 (Segundo Molar Inferior Derecho) -->
+        <g class="tooth healthy" data-tooth="47">
+            <path
+                d="M 540 250 L 590 250 L 595 320 L 535 320 Z"
+                class="fill-teal-100 stroke-teal-600 stroke-2"
+            />
+            <text x="565" y="285" text-anchor="middle" class="text-sm font-bold fill-slate-900">47</text>
+        </g>
+        
+        <!-- Etiquetas de cuadrantes -->
+        <text x="550" y="70" text-anchor="middle" class="text-xs font-semibold fill-slate-500">
+            Cuadrante 1
+        </text>
+        <text x="250" y="70" text-anchor="middle" class="text-xs font-semibold fill-slate-500">
+            Cuadrante 2
+        </text>
+        <text x="250" y="370" text-anchor="middle" class="text-xs font-semibold fill-slate-500">
+            Cuadrante 3
+        </text>
+        <text x="550" y="370" text-anchor="middle" class="text-xs font-semibold fill-slate-500">
+            Cuadrante 4
+        </text>
+        
+        <!-- Leyenda -->
+        <g>
+            <rect x="50" y="360" width="16" height="16" class="fill-teal-100 stroke-teal-600 stroke-2"/>
+            <text x="75" y="372" class="text-xs fill-slate-600">Sano</text>
+            
+            <rect x="150" y="360" width="16" height="16" class="fill-red-100 stroke-red-600 stroke-2"/>
+            <text x="175" y="372" class="text-xs fill-slate-600">Caries</text>
+            
+            <rect x="280" y="360" width="16" height="16" class="fill-yellow-100 stroke-yellow-600 stroke-2"/>
+            <text x="305" y="372" class="text-xs fill-slate-600">Restauración</text>
+        </g>
+    </svg>
+    
+    <p class="text-xs text-slate-500 mt-4">
+        Sistema FDI: Cada diente tiene un código de dos dígitos. Primer dígito = cuadrante (1-4), segundo dígito = posición en el cuadrante.
+    </p>
+</div>

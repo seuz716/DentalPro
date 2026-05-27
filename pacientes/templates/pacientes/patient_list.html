@@ -1,0 +1,51 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Pacientes - DentalPro{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-slate-900 mb-4">Gestión de Pacientes</h1>
+        
+        <!-- Formulario de búsqueda con HTMX -->
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+            <form class="flex gap-2" action="{% url 'pacientes:search' %}" method="get">
+                <input
+                    type="text"
+                    name="q"
+                    placeholder="Buscar por nombre, cédula o teléfono..."
+                    class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    hx-get="{% url 'pacientes:search' %}"
+                    hx-trigger="keyup changed delay:300ms"
+                    hx-target="#results"
+                    hx-include="[name='q']"
+                />
+                <button
+                    type="submit"
+                    class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
+                >
+                    Buscar
+                </button>
+                <a
+                    href="{% url 'pacientes:list' %}"
+                    class="px-6 py-2 bg-slate-200 text-slate-900 rounded-lg hover:bg-slate-300 transition"
+                >
+                    Limpiar
+                </a>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Resultados de la búsqueda o listado -->
+    <div id="results">
+        {% include 'pacientes/partials/_patient_list_results.html' %}
+    </div>
+</div>
+
+<script>
+    /**
+     * Inicializa los iconos de Lucide Icons
+     */
+    lucide.createIcons();
+</script>
+{% endblock %}
