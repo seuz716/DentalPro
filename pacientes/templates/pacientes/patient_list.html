@@ -83,5 +83,15 @@
     >
         {% include 'pacientes/partials/_patient_list_results.html' %}
     </div>
+
+    <!-- Botón flotante para crear paciente (móvil y escritorio) -->
+    <a
+        href="{% url 'pacientes:create' %}"
+        class="fixed bottom-6 right-6 md:bottom-8 md:right-8 inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-teal-600 text-white rounded-full shadow-lg hover:bg-teal-700 focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition transform hover:scale-105 z-10"
+        aria-label="Crear nuevo paciente"
+        title="Nuevo paciente"
+    >
+        <i data-lucide="plus" class="w-6 h-6 md:w-8 md:h-8"></i>
+    </a>
 </div>
 {% endblock %}

@@ -1,0 +1,245 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{% if form.instance.pk %}Editar{% else %}Nuevo{% endblock %} Paciente - DentalPro{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <!-- Encabezado -->
+    <div class="mb-6">
+        <a
+            href="{% if form.instance.pk %}{% url 'pacientes:detail' form.instance.pk %}{% else %}{% url 'pacientes:list' %}{% endif %}"
+            class="inline-flex items-center gap-1 text-sm text-teal-600 hover:text-teal-800 font-medium mb-3 transition"
+        >
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            {% if form.instance.pk %}Volver al paciente{% else %}Volver a pacientes{% endif %}
+        </a>
+        <h1 class="text-3xl font-bold text-slate-900">
+            {% if form.instance.pk %}Editar Paciente{% else %}Nuevo Paciente{% endif %}
+        </h1>
+        <p class="text-slate-500 mt-1 text-sm">
+            {% if form.instance.pk %}Modifica la información del paciente{% else %}Registra un nuevo paciente en el sistema{% endif %}
+        </p>
+    </div>
+
+    <!-- Formulario -->
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+        <form method="post" novalidate class="p-6 space-y-6">
+            {% csrf_token %}
+
+            <!-- Información Personal -->
+            <section aria-labelledby="personal-info-heading">
+                <h3 id="personal-info-heading" class="text-base font-semibold text-slate-900 mb-4 pb-2 border-b border-slate-100">
+                    Información Personal
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Nombres -->
+                    <div>
+                        <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                            Nombres <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="{{ form.first_name.name }}"
+                            id="{{ form.first_name.id_for_label }}"
+                            value="{{ form.first_name.value|default:'' }}"
+                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition {% if form.first_name.errors %}border-red-500 focus:ring-red-500{% endif %}"
+                            required
+                        >
+                        {% if form.first_name.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.first_name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Apellidos -->
+                    <div>
+                        <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                            Apellidos <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="{{ form.last_name.name }}"
+                            id="{{ form.last_name.id_for_label }}"
+                            value="{{ form.last_name.value|default:'' }}"
+                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition {% if form.last_name.errors %}border-red-500 focus:ring-red-500{% endif %}"
+                            required
+                        >
+                        {% if form.last_name.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.last_name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Fecha de Nacimiento -->
+                    <div>
+                        <label for="{{ form.birth_date.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                            Fecha de Nacimiento
+                        </label>
+                        <input
+                            type="date"
+                            name="{{ form.birth_date.name }}"
+                            id="{{ form.birth_date.id_for_label }}"
+                            value="{{ form.birth_date.value|date:'Y-m-d'|default:'' }}"
+                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition {% if form.birth_date.errors %}border-red-500 focus:ring-red-500{% endif %}"
+                        >
+                        {% if form.birth_date.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.birth_date.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Género -->
+                    <div>
+                        <label for="{{ form.gender.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                            Género <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            name="{{ form.gender.name }}"
+                            id="{{ form.gender.id_for_label }}"
+                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition {% if form.gender.errors %}border-red-500 focus:ring-red-500{% endif %}"
+                            required
+                        >
+                            <option value="">Seleccione...</option>
+                            {% for value, label in form.gender.field.choices %}
+                                <option value="{{ value }}" {% if form.gender.value == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.gender.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.gender.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+
+            <!-- Documento de Identidad -->
+            <section aria-labelledby="document-heading">
+                <h3 id="document-heading" class="text-base font-semibold text-slate-900 mb-4 pb-2 border-b border-slate-100">
+                    Documento de Identidad
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Tipo de Documento -->
+                    <div>
+                        <label for="{{ form.document_type.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                            Tipo de Documento
+                        </label>
+                        <select
+                            name="{{ form.document_type.name }}"
+                            id="{{ form.document_type.id_for_label }}"
+                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition {% if form.document_type.errors %}border-red-500 focus:ring-red-500{% endif %}"
+                        >
+                            {% for value, label in form.document_type.field.choices %}
+                                <option value="{{ value }}" {% if form.document_type.value == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.document_type.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.document_type.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Número de Documento -->
+                    <div class="md:col-span-2">
+                        <label for="{{ form.document_number.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                            Número de Documento <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="{{ form.document_number.name }}"
+                            id="{{ form.document_number.id_for_label }}"
+                            value="{{ form.document_number.value|default:'' }}"
+                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition {% if form.document_number.errors %}border-red-500 focus:ring-red-500{% endif %}"
+                            required
+                            placeholder="Ej: 1234567890"
+                        >
+                        {% if form.document_number.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.document_number.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-slate-500">{{ form.document_number.help_text }}</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contacto -->
+            <section aria-labelledby="contact-heading">
+                <h3 id="contact-heading" class="text-base font-semibold text-slate-900 mb-4 pb-2 border-b border-slate-100">
+                    Contacto
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Teléfono -->
+                    <div>
+                        <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                            Teléfono
+                        </label>
+                        <input
+                            type="tel"
+                            name="{{ form.phone.name }}"
+                            id="{{ form.phone.id_for_label }}"
+                            value="{{ form.phone.value|default:'' }}"
+                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition {% if form.phone.errors %}border-red-500 focus:ring-red-500{% endif %}"
+                            placeholder="+57 300 123 4567"
+                        >
+                        {% if form.phone.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.phone.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                            Correo Electrónico
+                        </label>
+                        <input
+                            type="email"
+                            name="{{ form.email.name }}"
+                            id="{{ form.email.id_for_label }}"
+                            value="{{ form.email.value|default:'' }}"
+                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition {% if form.email.errors %}border-red-500 focus:ring-red-500{% endif %}"
+                            placeholder="correo@ejemplo.com"
+                        >
+                        {% if form.email.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Dirección -->
+                    <div class="md:col-span-2">
+                        <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                            Dirección
+                        </label>
+                        <textarea
+                            name="{{ form.address.name }}"
+                            id="{{ form.address.id_for_label }}"
+                            rows="2"
+                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition resize-none {% if form.address.errors %}border-red-500 focus:ring-red-500{% endif %}"
+                            placeholder="Dirección completa del paciente"
+                        >{{ form.address.value|default:'' }}</textarea>
+                        {% if form.address.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.address.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+
+            <!-- Botones de acción -->
+            <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-200">
+                <a
+                    href="{% if form.instance.pk %}{% url 'pacientes:detail' form.instance.pk %}{% else %}{% url 'pacientes:list' %}{% endif %}"
+                    class="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 focus:ring-2 focus:ring-slate-400 focus:ring-offset-1 transition font-medium"
+                >
+                    Cancelar
+                </a>
+                <button
+                    type="submit"
+                    class="px-5 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 focus:ring-2 focus:ring-teal-500 focus:ring-offset-1 transition font-medium inline-flex items-center gap-2"
+                >
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    {% if form.instance.pk %}Guardar Cambios{% else %}Crear Paciente{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Re-inicializar Lucide Icons después de cargar el formulario
+    document.addEventListener('DOMContentLoaded', function() {
+        lucide.createIcons();
+    });
+</script>
+{% endblock %}

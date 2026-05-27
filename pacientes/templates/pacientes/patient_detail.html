@@ -7,13 +7,26 @@
 
     <!-- Header del paciente -->
     <div class="mb-6">
-        <a
-            href="{% url 'pacientes:list' %}"
-            class="inline-flex items-center gap-1 text-sm text-teal-600 hover:text-teal-800 font-medium mb-3 transition"
-        >
-            <i data-lucide="arrow-left" class="w-4 h-4"></i>
-            Volver a pacientes
-        </a>
+        <div class="flex items-center justify-between mb-3">
+            <a
+                href="{% url 'pacientes:list' %}"
+                class="inline-flex items-center gap-1 text-sm text-teal-600 hover:text-teal-800 font-medium transition"
+            >
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Volver a pacientes
+            </a>
+            <div class="flex items-center gap-2">
+                <!-- Botón Editar -->
+                <a
+                    href="{% url 'pacientes:update' patient.pk %}"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition font-medium text-sm"
+                    title="Editar paciente"
+                >
+                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                    Editar
+                </a>
+            </div>
+        </div>
         <h1 class="text-4xl font-bold text-slate-900">{{ patient.full_name }}</h1>
         <p class="text-slate-500 mt-1 text-sm">
             {{ patient.get_document_type_display }}: <span class="font-mono">{{ patient.document_number }}</span>
