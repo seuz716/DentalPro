@@ -8,16 +8,14 @@
                     <th class="px-6 py-3 text-left text-sm font-semibold text-slate-900">Documento</th>
                     <th class="px-6 py-3 text-left text-sm font-semibold text-slate-900">Teléfono</th>
                     <th class="px-6 py-3 text-left text-sm font-semibold text-slate-900">Edad</th>
-                    <th class="px-6 py-3 text-left text-sm font-semibold text-slate-900">Acciones</th>
+                    <th class="px-6 py-3 text-right text-sm font-semibold text-slate-900">Acciones</th>
                 </tr>
             </thead>
             <tbody class="divide-y">
                 {% for patient in object_list %}
                     <tr class="hover:bg-slate-50 transition">
                         <td class="px-6 py-4 text-sm text-slate-900">
-                            <a href="{% url 'pacientes:detail' patient.pk %}" class="text-teal-600 hover:underline font-medium">
-                                {{ patient.full_name }}
-                            </a>
+                            {{ patient.full_name }}
                         </td>
                         <td class="px-6 py-4 text-sm text-slate-600">
                             {{ patient.get_document_type_display }} {{ patient.document_number }}
@@ -33,13 +31,27 @@
                             {% endif %}
                         </td>
                         <td class="px-6 py-4 text-sm">
-                            <a
-                                href="{% url 'pacientes:detail' patient.pk %}"
-                                class="text-teal-600 hover:text-teal-800 font-medium transition"
-                                hx-push-url="true"
-                            >
-                                Ver
-                            </a>
+                            <div class="flex items-center justify-end gap-2">
+                                <!-- Botón Ver -->
+                                <a
+                                    href="{% url 'pacientes:detail' patient.pk %}"
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-teal-50 text-teal-700 rounded-md hover:bg-teal-100 focus:ring-2 focus:ring-teal-500 focus:ring-offset-1 transition font-medium"
+                                    hx-push-url="true"
+                                    title="Ver detalles"
+                                >
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                    <span class="sr-only">Ver</span>
+                                </a>
+                                <!-- Botón Editar -->
+                                <a
+                                    href="{% url 'pacientes:update' patient.pk %}"
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition font-medium"
+                                    title="Editar paciente"
+                                >
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                    <span class="sr-only">Editar</span>
+                                </a>
+                            </div>
                         </td>
                     </tr>
                 {% endfor %}
