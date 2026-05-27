@@ -1,33 +1,57 @@
+```
 # Python
+__pycache__/
 *.py[cod]
 *$py.class
 *.so
-__pycache__/
-*.egg-info/
-dist/
-build/
 .Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Database
+db.sqlite3
+
+# Environment
+.env
+.env.local
+.env.*
+.venv/
 venv/
 ENV/
-env/
 
-# Django
-*.sqlite3
-*.sqlite
-/media/
-/staticfiles/
+# Logs
+*.log
+
+# Coverage
+.coverage
+coverage/
+htmlcov/
+
+# Testing
+.pytest_cache/
+.mypy_cache/
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
+*.tmp
+
+# OS
 .DS_Store
-
-# Environment variables
-.env
-.env.local
-
-# Logs
-*.log
+Thumbs.db
+```
