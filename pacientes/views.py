@@ -4,12 +4,16 @@ Implementa listado, búsqueda y detalles de pacientes con HTMX.
 """
 
 from django.shortcuts import render
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.db.models import Q
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
+from django.contrib import messages
+from django.db import IntegrityError
 from .models import Patient
 
 
-class PatientListView(ListView):
+class PatientListView(LoginRequiredMixin, ListView):
     """
     Vista para listar pacientes con paginación.
     Muestra 15 pacientes por página.
@@ -34,7 +38,7 @@ class PatientListView(ListView):
         return context
 
 
-class PatientSearchView(ListView):
+class PatientSearchView(LoginRequiredMixin, ListView):
     """
     Vista para buscar pacientes por nombre, cédula o teléfono.
     Retorna solo el partial HTML para actualizar con HTMX.
@@ -71,7 +75,7 @@ class PatientSearchView(ListView):
         return context
 
 
-class PatientDetailView(DetailView):
+class PatientDetailView(LoginRequiredMixin, DetailView):
     """
     Vista para ver detalles completos de un paciente.
     Incluye tabs para datos personales, historia clínica y odontograma.
@@ -147,3 +151,43 @@ class PatientDetailView(DetailView):
             context['odontogram_teeth'] = teeth
             
         return context
+
+class PatientCreateView(LoginRequiredMixin, CreateView):
+    """
+    Vista para crear un nuevo paciente.
+    Implementa manejo de IntegrityError para race conditions.
+    """
+    model = Patient
+    fields = ['document_type', 'document_number', 'first_name', 'last_name', 'birth_date', 'gender', 'phone', 'email', 'address']
+    template_name = 'pacientes/patient_form.html'
+    success_url = reverse_lazy('pacientes:list')
+
+    def form_valid(self, form):
+        try:
+            response = super().form_valid(form)
+            messages.success(self.request, "Paciente creado exitosamente.")
+            return response
+        except IntegrityError:
+            form.add_error('document_number', 'Error de concurrencia: El número de documento ya fue registrado recientemente.')
+            return self.form_invalid(form)
+
+class PatientUpdateView(LoginRequiredMixin, UpdateView):
+    """
+    Vista para actualizar un paciente existente.
+    Implementa manejo de IntegrityError para race conditions.
+    """
+    model = Patient
+    fields = ['document_type', 'document_number', 'first_name', 'last_name', 'birth_date', 'gender', 'phone', 'email', 'address']
+    template_name = 'pacientes/patient_form.html'
+    
+    def get_success_url(self):
+        return reverse_lazy('pacientes:detail', kwargs={'pk': self.object.pk})
+
+    def form_valid(self, form):
+        try:
+            response = super().form_valid(form)
+            messages.success(self.request, "Paciente actualizado exitosamente.")
+            return response
+        except IntegrityError:
+            form.add_error('document_number', 'Error de concurrencia: El número de documento choca con un registro existente.')
+            return self.form_invalid(form)

@@ -161,8 +161,17 @@ class Patient(models.Model):
         errors = {}
         
         # Validar fecha de nacimiento
-        if self.birth_date > date.today():
+        if self.birth_date and self.birth_date > date.today():
             errors['birth_date'] = 'La fecha de nacimiento no puede ser en el futuro.'
+            
+        # Validar schema de notas clínicas (JSON)
+        if not isinstance(self.clinical_notes, list):
+            errors['clinical_notes'] = 'Las notas clínicas deben tener formato de lista JSON.'
+        else:
+            for note in self.clinical_notes:
+                if not isinstance(note, dict):
+                    errors['clinical_notes'] = 'Cada nota clínica debe ser un objeto JSON (diccionario).'
+                    break
         
         # Validar cédula colombiana si es CC
         if self.document_type == 'CC':
@@ -201,11 +210,17 @@ class Patient(models.Model):
         cedula_list = [int(d) for d in cedula_str[:-1]]
         dv_esperado = int(cedula_str[-1])
         
-        # Multiplicadores
-        multiplicadores = [3, 7, 13, 17, 19, 23, 29, 31, 37, 41]
+        # Multiplicadores oficiales corregidos
+        multiplicadores = [2, 7, 12, 17, 22, 27, 32, 37, 42, 47]
         
         suma = sum(d * m for d, m in zip(cedula_list, multiplicadores[:len(cedula_list)]))
-        dv_calculado = suma % 11
-        dv_calculado = 11 - dv_calculado if dv_calculado < 11 else 0
+        residuo = suma % 11
+        
+        if residuo <= 1:
+            dv_calculado = residuo
+        else:
+            dv_calculado = 11 - residuo
+            if dv_calculado == 10:
+                dv_calculado = 0
         
         return dv_esperado == dv_calculado
