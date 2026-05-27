@@ -92,19 +92,66 @@ Cada módulo es independiente pero se comunica entre sí. Si un día necesitas e
 ---
 
 ## 🗺️ Hoja de Ruta (Roadmap)
-- [x] Fase 1: Estructura base, configuración dev/prod, Tailwind + HTMX
-- [ ] Fase 2: Modelo `Patient` + migraciones
-- [ ] Fase 3: CRUD completo + búsqueda HTMX en tiempo real
-- [ ] Fase 4: Odontograma SVG interactivo (FDI)
-- [ ] Fase 5: Módulo de citas y calendario
-- [ ] Fase 6: Visor de imágenes médicas con zoom
+- [x] Fase 0: Estructura Django, Settings dev/prod
+- [x] Fase 1: Modelo `Patient` con validación de cédula
+- [x] Fase 2: Admin customizado y migraciones
+- [x] Fase 3: Vistas CBV (ListView, DetailView) + búsqueda
+- [x] Fase 4: Templates base y listado con Tailwind + HTMX
+- [x] Fase 5: Odontograma SVG (Sistema FDI)
+- [x] Fase 10: One-Click Launcher para escritorio
+- [ ] Fase 6: Módulo de citas y calendario
 - [ ] Fase 7: Inventario con alertas de stock crítico
 - [ ] Fase 8: Finanzas y exportación para portal DIAN
 - [ ] Fase 9: Asistente IA (Anthropic) con traducción clínica
-- [ ] Fase 10: Notificaciones por email y WhatsApp
-- [ ] Fase 11: Portal web limitado para pacientes
-- [ ] Fase 12: Dashboard con gráficos y reportes reales
-- [ ] Fase 13: Empaquetado `.exe` con PyInstaller
+- [ ] Fase 11: Notificaciones por email y WhatsApp
+- [ ] Fase 12: Portal web limitado para pacientes
+- [ ] Fase 13: Dashboard con gráficos y reportes reales
+
+---
+
+## 🚀 Launcher de Escritorio (Fase 10)
+
+### Para Desarrollo
+
+```bash
+# Instalar dependencias de desarrollo
+pip install -r requirements/dev.txt
+
+# Iniciar servidor
+python manage.py runserver --settings=config.settings.dev
+```
+
+Accede a `http://127.0.0.1:8000`
+
+### One-Click Launcher (Producción)
+
+```bash
+# Instalar dependencias de producción
+pip install -r requirements/prod.txt
+
+# Ejecutar el launcher
+python desktop/launcher.py
+```
+
+El launcher automáticamente:
+- ✓ Configura Django con settings de producción
+- ✓ Inicia servidor Waitress en `http://localhost:8000`
+- ✓ Abre navegador web automáticamente
+- ✓ Maneja cierre limpio (Ctrl+C)
+
+### Crear Ejecutable Independiente
+
+```bash
+# Instalar PyInstaller
+pip install pyinstaller
+
+# Crear ejecutable (one-file)
+pyinstaller dentalpro.spec
+
+# El archivo estará en: dist/DentalPro
+```
+
+Luego puedes distribuir `dist/DentalPro` a usuarios sin requería Python instalado.
 
 ---
 
