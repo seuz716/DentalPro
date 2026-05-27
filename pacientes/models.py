@@ -3,8 +3,11 @@ Modelos de la aplicación pacientes.
 """
 
 from datetime import date
-from django.db import models
+from typing import Any, Dict, List, Optional
+
 from django.core.exceptions import ValidationError
+from django.db import models
+from django.utils.functional import cached_property
 
 
 class Patient(models.Model):
@@ -66,7 +69,8 @@ class Patient(models.Model):
     birth_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de nacimiento'
+        verbose_name='Fecha de nacimiento',
+        help_text='Rango válido: 1900-2099'
     )
     gender = models.CharField(
         max_length=1,
@@ -109,7 +113,7 @@ class Patient(models.Model):
         default=list,
         blank=True,
         verbose_name='Notas clínicas',
-        help_text='Registro de notas clínicas en formato JSON'
+        help_text='Registro de notas clínicas. Acepta lista de objetos JSON o texto plano (se convierte automáticamente)'
     )
     
     # Timestamps
@@ -132,46 +136,72 @@ class Patient(models.Model):
             models.Index(fields=['-created_at']),
         ]
     
-    def __str__(self):
+    def __str__(self) -> str:
         """Representación en string del paciente."""
         return f"{self.first_name} {self.last_name} ({self.document_number})"
     
-    @property
-    def age(self):
+    @cached_property
+    def age(self) -> Optional[int]:
         """
         Calcula la edad del paciente basada en su fecha de nacimiento.
+        El resultado se cachea para evitar cálculos repetidos.
         
         Returns:
-            int: Edad en años.
+            int | None: Edad en años, o None si no hay fecha de nacimiento.
         """
+        if not self.birth_date:
+            return None
         today = date.today()
         born = self.birth_date
         return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
     
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         """Retorna el nombre completo del paciente."""
         return f"{self.first_name} {self.last_name}"
     
-    def clean(self):
+    def clean(self) -> None:
         """
         Valida los datos del paciente.
-        Incluye validación de cédula colombiana para CC.
+        Incluye validación de cédula colombiana para CC y límites de fecha de nacimiento.
         """
-        errors = {}
+        errors: Dict[str, str] = {}
         
-        # Validar fecha de nacimiento
-        if self.birth_date and self.birth_date > date.today():
-            errors['birth_date'] = 'La fecha de nacimiento no puede ser en el futuro.'
+        # Validar fecha de nacimiento (rango razonable: 1900-2099)
+        if self.birth_date:
+            if self.birth_date > date.today():
+                errors['birth_date'] = 'La fecha de nacimiento no puede ser en el futuro.'
+            elif self.birth_date.year < 1900 or self.birth_date.year > 2099:
+                errors['birth_date'] = 'La fecha de nacimiento debe estar entre 1900 y 2099.'
             
-        # Validar schema de notas clínicas (JSON)
-        if not isinstance(self.clinical_notes, list):
-            errors['clinical_notes'] = 'Las notas clínicas deben tener formato de lista JSON.'
-        else:
-            for note in self.clinical_notes:
+        # Validar y normalizar notas clínicas (JSON)
+        # Acepta: lista de diccionarios, texto plano (lo convierte), o lista vacía
+        if self.clinical_notes is None:
+            self.clinical_notes = []
+        elif isinstance(self.clinical_notes, str):
+            # Convertir texto plano a formato JSON estructurado
+            if self.clinical_notes.strip():
+                self.clinical_notes = [{
+                    'nota': self.clinical_notes.strip(),
+                    'tipo': 'texto_plano'
+                }]
+            else:
+                self.clinical_notes = []
+        elif isinstance(self.clinical_notes, list):
+            # Validar que cada elemento sea un diccionario
+            for idx, note in enumerate(self.clinical_notes):
                 if not isinstance(note, dict):
-                    errors['clinical_notes'] = 'Cada nota clínica debe ser un objeto JSON (diccionario).'
-                    break
+                    # Si es un string dentro de la lista, lo convertimos
+                    if isinstance(note, str):
+                        self.clinical_notes[idx] = {
+                            'nota': note.strip(),
+                            'tipo': 'texto_plano'
+                        }
+                    else:
+                        errors['clinical_notes'] = f'Cada nota clínica debe ser un objeto JSON (diccionario). Elemento {idx} inválido.'
+                        break
+        else:
+            errors['clinical_notes'] = 'Las notas clínicas deben tener formato de lista JSON o texto plano.'
         
         # Validar cédula colombiana si es CC
         if self.document_type == 'CC':
@@ -185,7 +215,7 @@ class Patient(models.Model):
             raise ValidationError(errors)
     
     @staticmethod
-    def _validate_cedula_colombiana(cedula_str):
+    def _validate_cedula_colombiana(cedula_str: str) -> bool:
         """
         Valida formato y dígito de control de cédula colombiana.
         
@@ -207,17 +237,17 @@ class Patient(models.Model):
             return False
         
         # Validar dígito de control (algoritmo de Luhn modificado)
-        cedula_list = [int(d) for d in cedula_str[:-1]]
-        dv_esperado = int(cedula_str[-1])
+        cedula_list: List[int] = [int(d) for d in cedula_str[:-1]]
+        dv_esperado: int = int(cedula_str[-1])
         
         # Multiplicadores oficiales corregidos
-        multiplicadores = [2, 7, 12, 17, 22, 27, 32, 37, 42, 47]
+        multiplicadores: List[int] = [2, 7, 12, 17, 22, 27, 32, 37, 42, 47]
         
-        suma = sum(d * m for d, m in zip(cedula_list, multiplicadores[:len(cedula_list)]))
-        residuo = suma % 11
+        suma: int = sum(d * m for d, m in zip(cedula_list, multiplicadores[:len(cedula_list)]))
+        residuo: int = suma % 11
         
         if residuo <= 1:
-            dv_calculado = residuo
+            dv_calculado: int = residuo
         else:
             dv_calculado = 11 - residuo
             if dv_calculado == 10:
