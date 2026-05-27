@@ -49,6 +49,7 @@ class Patient(models.Model):
     document_number = models.CharField(
         max_length=20,
         unique=True,
+        db_index=True,
         verbose_name='Número de documento',
         help_text='Debe ser único en el sistema'
     )
@@ -75,6 +76,7 @@ class Patient(models.Model):
     phone = models.CharField(
         max_length=20,
         blank=True,
+        db_index=True,
         verbose_name='Teléfono'
     )
     email = models.EmailField(

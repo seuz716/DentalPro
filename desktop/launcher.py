@@ -21,16 +21,26 @@ import webbrowser
 import threading
 import time
 import signal
+import socket
 from pathlib import Path
 from subprocess import Popen, PIPE
 from wsgiref.simple_server import WSGIServer
 
+# Manejo de PyInstaller (directorio temporal de extracción)
+if getattr(sys, 'frozen', False):
+    try:
+        os.chdir(sys._MEIPASS)
+        PROJECT_DIR = Path(sys._MEIPASS)
+    except Exception as e:
+        PROJECT_DIR = Path(__file__).resolve().parent.parent
+else:
+    PROJECT_DIR = Path(__file__).resolve().parent.parent
+
+sys.path.insert(0, str(PROJECT_DIR))
+
 # Configurar variables de entorno
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.prod')
 
-# Agregar directorio del proyecto al path
-PROJECT_DIR = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_DIR))
 
 def setup_django():
     """
@@ -99,6 +109,20 @@ def signal_handler(signum, frame):
     sys.exit(0)
 
 
+def find_free_port(host='127.0.0.1', start_port=8000, max_attempts=3):
+    """
+    Busca un puerto libre a partir de start_port.
+    """
+    for port in range(start_port, start_port + max_attempts):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind((host, port))
+                return port
+            except OSError:
+                print(f"⚠ Puerto {port} ocupado. Intentando con el siguiente...")
+    return None
+
+
 def main():
     """
     Función principal del launcher.
@@ -133,17 +157,28 @@ def main():
         print(f"✗ Error en validación: {e}")
         print("⚠ Continúa de todas formas...\n")
     
+    # Buscar puerto disponible
+    host = '127.0.0.1'
+    port = find_free_port(host, 8000, 3)
+    if not port:
+        print("✗ Error crítico: Los puertos 8000, 8001 y 8002 están ocupados.")
+        print("⚠ Libera alguno de estos puertos e intenta de nuevo.")
+        sys.exit(1)
+        
+    url = f"http://localhost:{port}"
+    
     # Iniciar hilo para abrir navegador
     browser_thread = threading.Thread(
         target=open_browser,
-        kwargs={'url': 'http://localhost:8000', 'delay': 2},
+        kwargs={'url': url, 'delay': 2},
         daemon=True
     )
     browser_thread.start()
     
     # Iniciar servidor Waitress (bloqueante)
-    run_waitress_server()
+    run_waitress_server(host=host, port=port)
 
 
 if __name__ == '__main__':
     main()
+

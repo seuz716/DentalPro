@@ -10,7 +10,9 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-CHANGE_ME_IN_PRODUCTION'
+import os
+from django.core.management.utils import get_random_secret_key
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', get_random_secret_key())
 
 # Aplicaciones Django instaladas
 INSTALLED_APPS = [
@@ -62,6 +64,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 20,
+        }
     }
 }
 

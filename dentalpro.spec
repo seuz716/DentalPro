@@ -101,7 +101,8 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,
+    console=False,  # Cambiar a True durante la depuración para ver logs en consola
+
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,

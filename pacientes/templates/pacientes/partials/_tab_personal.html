@@ -1,0 +1,91 @@
+<!-- Partial: Datos Personales del paciente -->
+<div class="space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+        <!-- Información Personal -->
+        <section aria-labelledby="personal-info-heading">
+            <h3 id="personal-info-heading" class="text-base font-semibold text-slate-900 mb-4 pb-2 border-b border-slate-100">
+                Información Personal
+            </h3>
+            <dl class="space-y-4">
+                <div>
+                    <dt class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Fecha de Nacimiento</dt>
+                    <dd class="text-sm text-slate-900">
+                        {% if patient.birth_date %}
+                            {{ patient.birth_date|date:"d/m/Y" }}
+                            <span class="text-slate-500">({{ patient.age }} años)</span>
+                        {% else %}
+                            <span class="text-slate-400">—</span>
+                        {% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Género</dt>
+                    <dd class="text-sm text-slate-900">{{ patient.get_gender_display|default:"—" }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Tipo de Sangre</dt>
+                    <dd class="text-sm text-slate-900">
+                        {% if patient.blood_type %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+                                {{ patient.blood_type }}
+                            </span>
+                        {% else %}
+                            <span class="text-slate-400">—</span>
+                        {% endif %}
+                    </dd>
+                </div>
+            </dl>
+        </section>
+
+        <!-- Contacto -->
+        <section aria-labelledby="contact-heading">
+            <h3 id="contact-heading" class="text-base font-semibold text-slate-900 mb-4 pb-2 border-b border-slate-100">
+                Contacto
+            </h3>
+            <dl class="space-y-4">
+                <div>
+                    <dt class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Teléfono</dt>
+                    <dd class="text-sm text-slate-900">
+                        {% if patient.phone %}
+                            <a href="tel:{{ patient.phone }}" class="text-teal-600 hover:underline">{{ patient.phone }}</a>
+                        {% else %}
+                            <span class="text-slate-400">—</span>
+                        {% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Correo Electrónico</dt>
+                    <dd class="text-sm text-slate-900">
+                        {% if patient.email %}
+                            <a href="mailto:{{ patient.email }}" class="text-teal-600 hover:underline break-all">{{ patient.email }}</a>
+                        {% else %}
+                            <span class="text-slate-400">—</span>
+                        {% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Dirección</dt>
+                    <dd class="text-sm text-slate-900">{{ patient.address|default:"—" }}</dd>
+                </div>
+            </dl>
+        </section>
+    </div>
+
+    <!-- Documento de Identidad -->
+    <section aria-labelledby="doc-heading">
+        <h3 id="doc-heading" class="text-base font-semibold text-slate-900 mb-4 pb-2 border-b border-slate-100">
+            Documento de Identidad
+        </h3>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <dt class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Tipo</dt>
+                <dd class="text-sm text-slate-900">{{ patient.get_document_type_display }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Número</dt>
+                <dd class="text-sm text-slate-900 font-mono">{{ patient.document_number }}</dd>
+            </div>
+        </dl>
+    </section>
+</div>

@@ -16,3 +16,9 @@ CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
 
 # Rutas relativas (relativas a BASE_DIR)
 # Ya configuradas en base.py usando Path de pathlib
+
+# Middleware para capturar excepciones no controladas en producción
+MIDDLEWARE += [
+    'core.middleware.FriendlyErrorMiddleware',
+]
+

@@ -1,0 +1,52 @@
+<!-- Partial: Historia Clínica del paciente -->
+<div class="space-y-6">
+
+    <!-- Datos clínicos básicos -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+        <section aria-labelledby="allergies-heading">
+            <h3 id="allergies-heading" class="text-base font-semibold text-slate-900 mb-4 pb-2 border-b border-slate-100">
+                Alergias
+            </h3>
+            {% if patient.allergies %}
+                <p class="text-sm text-slate-900 leading-relaxed bg-red-50 border border-red-100 rounded-lg p-3">
+                    ⚠️ {{ patient.allergies }}
+                </p>
+            {% else %}
+                <p class="text-sm text-slate-400 italic">Sin alergias registradas.</p>
+            {% endif %}
+        </section>
+
+        <section aria-labelledby="chronic-heading">
+            <h3 id="chronic-heading" class="text-base font-semibold text-slate-900 mb-4 pb-2 border-b border-slate-100">
+                Enfermedades Crónicas
+            </h3>
+            {% if patient.chronic_conditions %}
+                <p class="text-sm text-slate-900 leading-relaxed">{{ patient.chronic_conditions }}</p>
+            {% else %}
+                <p class="text-sm text-slate-400 italic">Sin condiciones crónicas registradas.</p>
+            {% endif %}
+        </section>
+    </div>
+
+    <!-- Notas clínicas -->
+    <section aria-labelledby="notes-heading">
+        <h3 id="notes-heading" class="text-base font-semibold text-slate-900 mb-4 pb-2 border-b border-slate-100">
+            Notas Clínicas
+        </h3>
+        {% if patient.clinical_notes %}
+            <ul class="space-y-3">
+                {% for note in patient.clinical_notes %}
+                    <li class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <p class="text-sm text-slate-700">{{ note }}</p>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="text-center py-10 text-slate-400">
+                <i data-lucide="file-text" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
+                <p class="text-sm">No hay notas clínicas registradas para este paciente.</p>
+            </div>
+        {% endif %}
+    </section>
+</div>

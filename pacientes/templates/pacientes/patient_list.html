@@ -4,48 +4,84 @@
 
 {% block content %}
 <div class="max-w-6xl mx-auto">
+
+    <!-- Encabezado -->
     <div class="mb-6">
         <h1 class="text-3xl font-bold text-slate-900 mb-4">Gestión de Pacientes</h1>
-        
+
         <!-- Formulario de búsqueda con HTMX -->
-        <div class="bg-white rounded-lg shadow p-4 mb-6">
-            <form class="flex gap-2" action="{% url 'pacientes:search' %}" method="get">
+        <div class="bg-white rounded-lg shadow p-4 mb-4">
+            <form
+                class="flex gap-2"
+                action="{% url 'pacientes:search' %}"
+                method="get"
+                role="search"
+                aria-label="Buscar pacientes"
+            >
+                <label for="search-input" class="sr-only">Buscar pacientes</label>
                 <input
-                    type="text"
+                    id="search-input"
+                    type="search"
                     name="q"
-                    placeholder="Buscar por nombre, cédula o teléfono..."
-                    class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    value="{{ search_query }}"
+                    placeholder="Buscar por nombre, cédula o teléfono…"
+                    class="flex-1 px-4 py-2 border border-slate-300 rounded-lg
+                           focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500
+                           transition"
+                    autocomplete="off"
                     hx-get="{% url 'pacientes:search' %}"
                     hx-trigger="keyup changed delay:300ms"
                     hx-target="#results"
-                    hx-include="[name='q']"
+                    hx-indicator="#spinner"
+                    aria-controls="results"
+                    aria-autocomplete="list"
                 />
                 <button
                     type="submit"
-                    class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
+                    class="px-5 py-2 bg-teal-600 text-white rounded-lg
+                           hover:bg-teal-700 focus:ring-2 focus:ring-teal-500 focus:ring-offset-1
+                           transition font-medium"
                 >
-                    Buscar
+                    <span class="sr-only">Ejecutar </span>Buscar
                 </button>
                 <a
                     href="{% url 'pacientes:list' %}"
-                    class="px-6 py-2 bg-slate-200 text-slate-900 rounded-lg hover:bg-slate-300 transition"
+                    class="px-5 py-2 bg-slate-100 text-slate-700 rounded-lg
+                           hover:bg-slate-200 focus:ring-2 focus:ring-slate-400 focus:ring-offset-1
+                           transition font-medium inline-flex items-center"
+                    role="button"
                 >
                     Limpiar
                 </a>
             </form>
         </div>
     </div>
-    
-    <!-- Resultados de la búsqueda o listado -->
-    <div id="results">
+
+    <!-- Spinner HTMX ─────────────────────────────────────────────────
+         IMPORTANTE: No usar clase "hidden" aquí.
+         HTMX controla la visibilidad del indicador mediante la clase
+         CSS .htmx-indicator (opacity:0 → opacity:1 durante el request).
+         La clase "hidden" (display:none !important) rompe ese mecanismo.
+    ──────────────────────────────────────────────────────────────── -->
+    <div
+        id="spinner"
+        class="htmx-indicator flex items-center justify-center gap-3 py-6"
+        role="status"
+        aria-live="polite"
+        aria-label="Buscando pacientes…"
+    >
+        <div class="animate-spin rounded-full h-7 w-7 border-[3px] border-slate-200 border-t-teal-600"></div>
+        <span class="text-sm text-slate-500">Buscando…</span>
+    </div>
+
+    <!-- Resultados -->
+    <div
+        id="results"
+        aria-live="polite"
+        aria-atomic="true"
+        aria-label="Resultados de búsqueda"
+    >
         {% include 'pacientes/partials/_patient_list_results.html' %}
     </div>
 </div>
-
-<script>
-    /**
-     * Inicializa los iconos de Lucide Icons
-     */
-    lucide.createIcons();
-</script>
 {% endblock %}

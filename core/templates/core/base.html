@@ -4,43 +4,184 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}DentalPro{% endblock %}</title>
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    
+
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    
+
+    <!--
+        NOTA OFFLINE-FIRST:
+        Para uso 100% sin conexión, descarga estas librerías localmente y sirve
+        desde /static/vendor/:
+          htmx.min.js    → https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js
+          lucide.min.js  → https://unpkg.com/lucide@latest/dist/umd/lucide.min.js
+          tailwind.js    → https://cdn.tailwindcss.com (standalone CLI build)
+    -->
+
+    <style>
+        /* ── HTMX Indicator ──────────────────────────────────────────
+           HTMX maneja los indicadores via opacidad, NO via display.
+           El uso de Tailwind "hidden" (display:none) rompe este mecanismo.
+           Esta regla garantiza visibilidad correcta durante requests.
+        ─────────────────────────────────────────────────────────── */
+        .htmx-indicator {
+            opacity: 0;
+            transition: opacity 200ms ease-in;
+            pointer-events: none;
+        }
+        .htmx-request .htmx-indicator,
+        .htmx-request.htmx-indicator {
+            opacity: 1;
+        }
+
+        /* ── Sidebar transition ──────────────────────────────────── */
+        #sidebar {
+            transition: transform 200ms ease-in-out;
+        }
+        #sidebar-overlay {
+            transition: opacity 200ms ease-in-out;
+        }
+
+        /* ── Tab activo visual ───────────────────────────────────── */
+        .tab-button.active {
+            border-bottom-color: #0d9488; /* teal-600 */
+            color: #0d9488;
+        }
+        .tab-button:not(.active) {
+            border-bottom-color: transparent;
+            color: #475569; /* slate-600 */
+        }
+        .tab-button:not(.active):hover {
+            color: #1e293b;
+            background-color: #f8fafc;
+        }
+
+        /* ── Focus visible para accesibilidad ───────────────────── */
+        :focus-visible {
+            outline: 2px solid #0d9488;
+            outline-offset: 2px;
+        }
+    </style>
+
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-slate-50">
-    <!-- Sidebar mínimo -->
-    <div class="flex h-screen">
-        <div class="w-64 bg-white shadow-lg hidden md:flex flex-col p-4">
-            <div class="text-2xl font-bold text-teal-600 mb-8">DentalPro</div>
-            <nav class="flex-1 space-y-2">
-                <a href="{% url 'pacientes:list' %}" class="block px-4 py-2 rounded hover:bg-slate-100">
-                    <i data-lucide="users"></i>
-                    Pacientes
-                </a>
-            </nav>
+
+<!-- ── Layout principal ───────────────────────────────────────── -->
+<div class="flex h-screen overflow-hidden">
+
+    <!-- Overlay móvil (clic para cerrar sidebar) -->
+    <div
+        id="sidebar-overlay"
+        class="fixed inset-0 bg-black bg-opacity-40 z-20 hidden md:hidden"
+        onclick="closeSidebar()"
+        aria-hidden="true"
+    ></div>
+
+    <!-- ── Sidebar ───────────────────────────────────────────── -->
+    <aside
+        id="sidebar"
+        class="
+            fixed md:static inset-y-0 left-0 z-30
+            w-64 bg-white shadow-lg
+            flex flex-col p-4
+            -translate-x-full md:translate-x-0
+        "
+        aria-label="Menú de navegación"
+    >
+        <!-- Logo -->
+        <div class="text-2xl font-bold text-teal-600 mb-8 flex items-center gap-2">
+            <i data-lucide="activity" class="w-7 h-7"></i>
+            DentalPro
         </div>
-        
-        <!-- Main content -->
+
+        <!-- Navegación -->
+        <nav class="flex-1 space-y-1" aria-label="Secciones principales">
+            <a
+                href="{% url 'core:index' %}"
+                class="flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 hover:bg-teal-50 hover:text-teal-700 font-medium transition"
+            >
+                <i data-lucide="home" class="w-5 h-5 shrink-0"></i>
+                Inicio
+            </a>
+            <a
+                href="{% url 'pacientes:list' %}"
+                class="flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 hover:bg-teal-50 hover:text-teal-700 font-medium transition"
+            >
+                <i data-lucide="users" class="w-5 h-5 shrink-0"></i>
+                Pacientes
+            </a>
+        </nav>
+
+        <!-- Footer sidebar -->
+        <div class="text-xs text-slate-400 pt-4 border-t border-slate-100">
+            DentalPro v1.0 — Modo sin conexión
+        </div>
+    </aside>
+
+    <!-- ── Contenido principal ────────────────────────────────── -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        <!-- Barra superior móvil -->
+        <header class="md:hidden bg-white shadow-sm px-4 py-3 flex items-center gap-3 z-10">
+            <button
+                type="button"
+                id="sidebar-toggle"
+                onclick="openSidebar()"
+                class="text-slate-600 hover:text-teal-600 transition"
+                aria-label="Abrir menú"
+                aria-expanded="false"
+                aria-controls="sidebar"
+            >
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+            <span class="text-lg font-bold text-teal-600">DentalPro</span>
+        </header>
+
         <main class="flex-1 overflow-auto">
-            <div class="p-6">
+            <div class="p-4 md:p-6">
                 {% block content %}{% endblock %}
             </div>
         </main>
     </div>
-    
-    <script>
-        lucide.createIcons();
-    </script>
-    
-    {% block extra_js %}{% endblock %}
+</div>
+
+<!-- ── Scripts globales ───────────────────────────────────────── -->
+<script>
+    /* ── Sidebar móvil ─────────────────────────────────────── */
+    function openSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        const toggle  = document.getElementById('sidebar-toggle');
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+        toggle && toggle.setAttribute('aria-expanded', 'true');
+    }
+    function closeSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        const toggle  = document.getElementById('sidebar-toggle');
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+        toggle && toggle.setAttribute('aria-expanded', 'false');
+    }
+    // Cerrar con Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeSidebar();
+    });
+
+    /* ── Inicializar Lucide Icons ───────────────────────────── */
+    lucide.createIcons();
+
+    /* ── Re-inicializar Lucide después de swaps HTMX ────────── */
+    document.addEventListener('htmx:afterSwap', () => lucide.createIcons());
+</script>
+
+{% block extra_js %}{% endblock %}
 </body>
 </html>

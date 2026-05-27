@@ -4,90 +4,154 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto">
-    <!-- Header -->
+
+    <!-- Header del paciente -->
     <div class="mb-6">
-        <a href="{% url 'pacientes:list' %}" class="text-teal-600 hover:text-teal-800 text-sm font-medium mb-4 inline-block">
-            ← Volver a pacientes
+        <a
+            href="{% url 'pacientes:list' %}"
+            class="inline-flex items-center gap-1 text-sm text-teal-600 hover:text-teal-800 font-medium mb-3 transition"
+        >
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            Volver a pacientes
         </a>
         <h1 class="text-4xl font-bold text-slate-900">{{ patient.full_name }}</h1>
-        <p class="text-slate-600 mt-2">
-            {{ patient.get_document_type_display }}: {{ patient.document_number }}
+        <p class="text-slate-500 mt-1 text-sm">
+            {{ patient.get_document_type_display }}: <span class="font-mono">{{ patient.document_number }}</span>
         </p>
     </div>
-    
-    <!-- Tabs con HTMX -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="border-b border-slate-200">
-            <div class="flex gap-0">
+
+    <!-- Tarjeta de tabs -->
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+
+        <!-- ── Barra de tabs ──────────────────────────────────────
+             Los botones usan hx-get para cargar el partial del tab
+             correspondiente en #tab-content (solo el contenido,
+             no la página completa).
+             La vista detecta la cabecera HX-Request y retorna el
+             partial apropiado basado en ?tab=<nombre>.
+        ──────────────────────────────────────────────────────── -->
+        <div
+            class="border-b border-slate-200"
+            role="tablist"
+            aria-label="Secciones del paciente"
+        >
+            <div class="flex gap-0 overflow-x-auto scrollbar-none">
                 <button
-                    hx-get="{% url 'pacientes:detail' patient.pk %}"
+                    id="tab-btn-personal"
+                    type="button"
+                    role="tab"
+                    aria-selected="{% if active_tab == 'personal' %}true{% else %}false{% endif %}"
+                    aria-controls="tab-content"
+                    hx-get="{% url 'pacientes:detail' patient.pk %}?tab=personal"
                     hx-target="#tab-content"
-                    class="tab-button px-6 py-4 border-b-2 border-teal-600 text-teal-600 font-medium"
+                    hx-swap="innerHTML"
+                    hx-indicator="#tab-spinner"
+                    class="tab-button {% if active_tab == 'personal' %}active{% endif %}
+                           px-5 py-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors"
+                    onclick="activateTab('personal')"
                 >
+                    <i data-lucide="user" class="w-4 h-4 inline-block mr-1.5 align-text-bottom"></i>
                     Datos Personales
                 </button>
+
                 <button
+                    id="tab-btn-clinical"
+                    type="button"
+                    role="tab"
+                    aria-selected="{% if active_tab == 'clinical' %}true{% else %}false{% endif %}"
+                    aria-controls="tab-content"
                     hx-get="{% url 'pacientes:detail' patient.pk %}?tab=clinical"
                     hx-target="#tab-content"
-                    class="tab-button px-6 py-4 border-b-2 border-transparent text-slate-600 hover:text-slate-900 font-medium transition"
+                    hx-swap="innerHTML"
+                    hx-indicator="#tab-spinner"
+                    class="tab-button {% if active_tab == 'clinical' %}active{% endif %}
+                           px-5 py-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors"
+                    onclick="activateTab('clinical')"
                 >
+                    <i data-lucide="file-text" class="w-4 h-4 inline-block mr-1.5 align-text-bottom"></i>
                     Historia Clínica
                 </button>
+
                 <button
+                    id="tab-btn-odontogram"
+                    type="button"
+                    role="tab"
+                    aria-selected="{% if active_tab == 'odontogram' %}true{% else %}false{% endif %}"
+                    aria-controls="tab-content"
                     hx-get="{% url 'pacientes:detail' patient.pk %}?tab=odontogram"
                     hx-target="#tab-content"
-                    class="tab-button px-6 py-4 border-b-2 border-transparent text-slate-600 hover:text-slate-900 font-medium transition"
+                    hx-swap="innerHTML"
+                    hx-indicator="#tab-spinner"
+                    class="tab-button {% if active_tab == 'odontogram' %}active{% endif %}
+                           px-5 py-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors"
+                    onclick="activateTab('odontogram')"
                 >
+                    <i data-lucide="scan-line" class="w-4 h-4 inline-block mr-1.5 align-text-bottom"></i>
                     Odontograma
                 </button>
             </div>
         </div>
-        
-        <!-- Contenido de tabs -->
-        <div id="tab-content" class="p-6">
-            <!-- Tab: Datos Personales -->
-            <div class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Información Personal -->
-                    <div>
-                        <h3 class="text-lg font-semibold text-slate-900 mb-4">Información Personal</h3>
-                        <dl class="space-y-4">
-                            <div>
-                                <dt class="text-sm font-medium text-slate-600">Fecha de Nacimiento</dt>
-                                <dd class="text-sm text-slate-900">
-                                    {{ patient.birth_date|date:"d/m/Y" }} ({{ patient.age }} años)
-                                </dd>
-                            </div>
-                            <div>
-                                <dt class="text-sm font-medium text-slate-600">Género</dt>
-                                <dd class="text-sm text-slate-900">
-                                    {{ patient.get_gender_display|default:"—" }}
-                                </dd>
-                            </div>
-                        </dl>
-                    </div>
-                    
-                    <!-- Contacto -->
-                    <div>
-                        <h3 class="text-lg font-semibold text-slate-900 mb-4">Contacto</h3>
-                        <dl class="space-y-4">
-                            <div>
-                                <dt class="text-sm font-medium text-slate-600">Teléfono</dt>
-                                <dd class="text-sm text-slate-900">{{ patient.phone|default:"—" }}</dd>
-                            </div>
-                            <div>
-                                <dt class="text-sm font-medium text-slate-600">Correo Electrónico</dt>
-                                <dd class="text-sm text-slate-900">{{ patient.email|default:"—" }}</dd>
-                            </div>
-                            <div>
-                                <dt class="text-sm font-medium text-slate-600">Dirección</dt>
-                                <dd class="text-sm text-slate-900">{{ patient.address|default:"—" }}</dd>
-                            </div>
-                        </dl>
-                    </div>
-                </div>
-            </div>
+
+        <!-- Spinner de carga de tabs -->
+        <div
+            id="tab-spinner"
+            class="htmx-indicator flex items-center gap-2 px-6 py-2 bg-teal-50 border-b border-teal-100"
+            role="status"
+            aria-live="polite"
+            aria-label="Cargando sección…"
+        >
+            <div class="animate-spin rounded-full h-4 w-4 border-2 border-teal-200 border-t-teal-600"></div>
+            <span class="text-xs text-teal-600">Cargando…</span>
+        </div>
+
+        <!-- ── Contenido del tab activo ───────────────────────────
+             El contenido inicial es renderizado por Django (SSR).
+             HTMX reemplaza solo el innerHTML de este div con cada
+             click de tab, recibiendo el partial correcto del servidor.
+        ──────────────────────────────────────────────────────── -->
+        <div
+            id="tab-content"
+            class="p-6"
+            role="tabpanel"
+            aria-labelledby="tab-btn-{{ active_tab }}"
+        >
+            {% if active_tab == 'personal' %}
+                {% include 'pacientes/partials/_tab_personal.html' %}
+            {% elif active_tab == 'clinical' %}
+                {% include 'pacientes/partials/_tab_clinical.html' %}
+            {% elif active_tab == 'odontogram' %}
+                {% include 'pacientes/partials/_tab_odontogram.html' %}
+            {% else %}
+                {% include 'pacientes/partials/_tab_personal.html' %}
+            {% endif %}
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    /**
+     * Gestiona el estado visual de los tabs (clase CSS "active").
+     * Se llama en el evento onclick (antes de que HTMX ejecute el request),
+     * lo que provee feedback inmediato al usuario.
+     *
+     * @param {string} tabName  - Identificador del tab: 'personal' | 'clinical' | 'odontogram'
+     */
+    function activateTab(tabName) {
+        const buttons = document.querySelectorAll('.tab-button');
+        buttons.forEach((btn) => {
+            const isActive = btn.id === `tab-btn-${tabName}`;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+    }
+
+    // Re-inicializar Lucide tras swap del tab (los íconos quedan dentro del partial)
+    document.body.addEventListener('htmx:afterSwap', (e) => {
+        if (e.detail.target.id === 'tab-content') {
+            lucide.createIcons();
+        }
+    });
+</script>
 {% endblock %}
