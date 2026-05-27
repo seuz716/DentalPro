@@ -5,18 +5,21 @@ Especificación para PyInstaller - DentalPro.
 Crea un ejecutable único (one-file) para Windows, macOS y Linux.
 Incluye:
 - Aplicación Django completa
+- Base de datos SQLite pre-inicializada
 - Archivos estáticos y media
-- Base de datos SQLite
+- Todos los templates y configuración
 
 Uso:
-    pyinstaller dentalpro.spec --onefile
+    pyinstaller dentalpro.spec
 
 Esto creará:
-    - dist/dentalpro (ejecutable)
+    - dist/DentalPro (ejecutable)
     - build/ (archivos temporales)
+
+Nota: El icono puede configurarse con icon='desktop/dentalpro.ico'
 """
 
-from PyInstaller.utils.hooks import get_module_collection_mode
+from PyInstaller.utils.hooks import collect_submodules
 import os
 
 # Directorio del proyecto
@@ -24,33 +27,36 @@ PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 block_cipher = None
 
-# Archivos y directorios a incluir
+# Archivos y directorios a incluir en el ejecutable
 datas = [
-    # Archivos estáticos
+    # Base de datos SQLite pre-inicializada
+    (os.path.join(PROJECT_DIR, 'db.sqlite3'), '.'),
+    
+    # Archivos estáticos (CSS, JS, imágenes)
     (os.path.join(PROJECT_DIR, 'static'), 'static'),
     
-    # Archivos de media
+    # Archivos de media (imágenes clínicas, radiografías)
     (os.path.join(PROJECT_DIR, 'media'), 'media'),
     
-    # Templates de core
+    # Templates de core (base.html, index.html)
     (os.path.join(PROJECT_DIR, 'core', 'templates'), 'core/templates'),
     
-    # Templates de pacientes
+    # Templates de pacientes (listado, detalles, búsqueda)
     (os.path.join(PROJECT_DIR, 'pacientes', 'templates'), 'pacientes/templates'),
     
-    # Configuración de Django
+    # Configuración de Django (settings, urls)
     (os.path.join(PROJECT_DIR, 'config'), 'config'),
 ]
 
-# Módulos Python a incluir
+# Módulos Python a incluir (evita errores de importación)
 hiddenimports = [
     'django',
     'django.conf',
+    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.admin',
     'django.contrib.messages',
+    'django.contrib.sessions',
     'django.contrib.staticfiles',
     'django.core.wsgi',
     'django.core.management',
@@ -60,6 +66,7 @@ hiddenimports = [
     'waitress',
 ]
 
+# Análisis de dependencias
 a = Analysis(
     [os.path.join(PROJECT_DIR, 'desktop', 'launcher.py')],
     pathex=[PROJECT_DIR],
@@ -76,8 +83,10 @@ a = Analysis(
     noarchive=False,
 )
 
+# Archivar módulos compilados
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
+# Crear ejecutable
 exe = EXE(
     pyz,
     a.scripts,
@@ -97,5 +106,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,
+    icon=None,  # Descomentar y asignar: icon='desktop/dentalpro.ico'
 )
