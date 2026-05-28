@@ -11,6 +11,7 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.db import IntegrityError
 from .models import Patient
+from .forms import PatientForm
 
 
 class PatientListView(LoginRequiredMixin, ListView):
@@ -152,42 +153,88 @@ class PatientDetailView(LoginRequiredMixin, DetailView):
             
         return context
 
+
 class PatientCreateView(LoginRequiredMixin, CreateView):
     """
     Vista para crear un nuevo paciente.
-    Implementa manejo de IntegrityError para race conditions.
+    Usa PatientForm que ejecuta validaciones del modelo (clean()).
+    Maneja IntegrityError para duplicados de documento_number.
     """
     model = Patient
-    fields = ['document_type', 'document_number', 'first_name', 'last_name', 'birth_date', 'gender', 'phone', 'email', 'address']
+    form_class = PatientForm  # ← AHORA USA FORM EXPLÍCITO
     template_name = 'pacientes/patient_form.html'
     success_url = reverse_lazy('pacientes:list')
 
     def form_valid(self, form):
+        """
+        Si el formulario es válido, guarda el paciente y muestra mensaje.
+        """
         try:
             response = super().form_valid(form)
-            messages.success(self.request, "Paciente creado exitosamente.")
+            messages.success(
+                self.request, 
+                f"✓ Paciente {self.object.full_name} creado exitosamente."
+            )
             return response
         except IntegrityError:
-            form.add_error('document_number', 'Error de concurrencia: El número de documento ya fue registrado recientemente.')
+            # Captura duplicados de document_number a nivel de BD
+            form.add_error(
+                'document_number', 
+                'Este número de documento ya existe en el sistema. '
+                'Verifica el número de cédula.'
+            )
             return self.form_invalid(form)
+
+    def form_invalid(self, form):
+        """
+        Si el formulario es inválido (validaciones fallaron),
+        se redisplaya con los errores destacados.
+        """
+        messages.error(
+            self.request,
+            'Por favor, corrige los errores en el formulario.'
+        )
+        return super().form_invalid(form)
+
 
 class PatientUpdateView(LoginRequiredMixin, UpdateView):
     """
     Vista para actualizar un paciente existente.
-    Implementa manejo de IntegrityError para race conditions.
+    Usa PatientForm que ejecuta validaciones del modelo (clean()).
     """
     model = Patient
-    fields = ['document_type', 'document_number', 'first_name', 'last_name', 'birth_date', 'gender', 'phone', 'email', 'address']
+    form_class = PatientForm  # ← AHORA USA FORM EXPLÍCITO
     template_name = 'pacientes/patient_form.html'
     
     def get_success_url(self):
         return reverse_lazy('pacientes:detail', kwargs={'pk': self.object.pk})
 
     def form_valid(self, form):
+        """
+        Si el formulario es válido, guarda cambios y muestra mensaje.
+        """
         try:
             response = super().form_valid(form)
-            messages.success(self.request, "Paciente actualizado exitosamente.")
+            messages.success(
+                self.request,
+                f"✓ Paciente {self.object.full_name} actualizado exitosamente."
+            )
             return response
         except IntegrityError:
-            form.add_error('document_number', 'Error de concurrencia: El número de documento choca con un registro existente.')
+            # Captura si otro paciente usa el mismo documento_number
+            form.add_error(
+                'document_number',
+                'Este número de documento está siendo usado por otro paciente. '
+                'Elige un número diferente.'
+            )
             return self.form_invalid(form)
+
+    def form_invalid(self, form):
+        """
+        Si el formulario es inválido, se redisplaya con los errores.
+        """
+        messages.error(
+            self.request,
+            'Por favor, corrige los errores en el formulario.'
+        )
+        return super().form_invalid(form)
