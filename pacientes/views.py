@@ -3,8 +3,8 @@ Vistas de la aplicación pacientes.
 Implementa listado, búsqueda y detalles de pacientes con HTMX.
 """
 
-from django.shortcuts import render
-from django.views import View
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.db.models import Q
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -13,8 +13,11 @@ from django.contrib import messages
 from django.db import IntegrityError
 from django.http import JsonResponse
 import json
+import base64
+
 from .models import Patient, ToothRecord
 from .forms import PatientForm
+from core.services.pdf_generator import PatientReportGenerator
 
 
 class PatientListView(LoginRequiredMixin, ListView):
@@ -159,13 +162,12 @@ class PatientCreateView(LoginRequiredMixin, CreateView):
     """
     Vista para crear un nuevo paciente.
     Usa PatientForm que ejecuta validaciones del modelo (clean()).
-    Maneja IntegrityError para duplicados de documento_number.
+    Maneja IntegrityError para duplicados de document_number.
     """
     model = Patient
     form_class = PatientForm  # ← AHORA USA FORM EXPLÍCITO
     template_name = 'pacientes/patient_form.html'
     success_url = reverse_lazy('pacientes:list')
-
     def form_valid(self, form):
         """
         Si el formulario es válido, guarda el paciente y muestra mensaje.
@@ -284,3 +286,19 @@ class ToothRecordUpdateView(LoginRequiredMixin, View):
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
+
+class PatientReportPDFView(LoginRequiredMixin, View):
+    """
+    Vista para generar y descargar el reporte PDF de un paciente.
+    Acepta un parámetro opcional `canvas_image` (base64) para el odontograma.
+    """
+    def get(self, request, pk, *args, **kwargs):
+        patient = get_object_or_404(Patient, pk=pk)
+        canvas_image = request.GET.get('canvas_image', None)
+
+        pdf_generator = PatientReportGenerator(patient, canvas_image=canvas_image)
+        pdf_buffer = pdf_generator.generate()
+
+        response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{pdf_generator.get_filename()}"'
+        return response
