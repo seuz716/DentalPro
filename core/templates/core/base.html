@@ -193,24 +193,22 @@
 
     /* ── Re-inicializar Lucide después de swaps HTMX ────────── */
     document.addEventListener('htmx:afterSwap', () => lucide.createIcons());
-</script>
 
-<script>
+    /* ── Service Worker Registration ────────────────────────── */
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('/sw.js')
-                .then((registration) => {
-                    console.log('ServiceWorker registrado con éxito:', registration);
+                .then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
                 })
-                .catch((error) => {
-                    console.error('Error al registrar ServiceWorker:', error);
+                .catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
                 });
         });
-    } else {
-        console.log('ServiceWorker no está disponible en este navegador.');
     }
 </script>
 
 {% block extra_js %}{% endblock %}
 </body>
 </html>
+
