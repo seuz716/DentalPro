@@ -10,12 +10,15 @@ from urllib.parse import urlparse
 from django.views.generic import TemplateView
 from django.views import View
 from django.http import JsonResponse
+import logging
+logger = logging.getLogger('webauthn.audit')
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
 from django.utils import timezone
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+
 
 from webauthn import (
     generate_registration_options,
@@ -391,7 +394,7 @@ class WebAuthnAuthenticateCompleteView(View):
             credential.sign_count = verification.new_sign_count
             credential.last_used_at = timezone.now()
             credential.save()
-            
+            logger.info(f"REGISTRO_EXITOSO | User: {self.request.user.username} | IP: {self.request.META.get('REMOTE_ADDR')} | CredentialID: {credential.credential_id.hex()[:16]}")                
             # Marcar el desafío como usado
             challenge_obj.is_used = True
             challenge_obj.save()

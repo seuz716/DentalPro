@@ -6,6 +6,8 @@ Implementa listado, búsqueda y detalles de pacientes con HTMX.
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.views import View"
+from django.views import View
 from django.db.models import Q
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
@@ -35,7 +37,6 @@ class PatientListView(LoginRequiredMixin, ListView):
         Retorna pacientes ordenados por fecha de creación descendente.
         """
         return Patient.objects.all().order_by('-created_at')
-
     def get_context_data(self, **kwargs):
         """
         Añade contexto adicional para búsqueda.
