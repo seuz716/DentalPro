@@ -63,19 +63,19 @@
                 <div class="space-y-2">
                     <span class="text-xs text-slate-500 block mb-1">Registrar Diagnóstico / Tratamiento:</span>
                     <div class="grid grid-cols-2 gap-2">
-                        <button type="button" onclick="updateSelectedToothStatus('S')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-slate-850 hover:bg-slate-800 border border-slate-700 text-teal-400 hover:text-teal-300 transition">
+                        <button type="submit" form="odontogram-3d-htmx-form" onclick="updateSelectedToothStatus('S')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-slate-850 hover:bg-slate-800 border border-slate-700 text-teal-400 hover:text-teal-300 transition">
                             <span class="w-2.5 h-2.5 rounded-full bg-slate-400 border border-slate-200"></span>
                             Sano
                         </button>
-                        <button type="button" onclick="updateSelectedToothStatus('C')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-slate-850 hover:bg-slate-800 border border-slate-700 text-red-400 hover:text-red-300 transition">
+                        <button type="submit" form="odontogram-3d-htmx-form" onclick="updateSelectedToothStatus('C')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-slate-850 hover:bg-slate-800 border border-slate-700 text-red-400 hover:text-red-300 transition">
                             <span class="w-2.5 h-2.5 rounded-full bg-red-500 border border-red-300"></span>
                             Caries
                         </button>
-                        <button type="button" onclick="updateSelectedToothStatus('R')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-slate-850 hover:bg-slate-800 border border-slate-700 text-yellow-400 hover:text-yellow-300 transition">
+                        <button type="submit" form="odontogram-3d-htmx-form" onclick="updateSelectedToothStatus('R')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-slate-850 hover:bg-slate-800 border border-slate-700 text-yellow-400 hover:text-yellow-300 transition">
                             <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 border border-yellow-200"></span>
                             Restaurado
                         </button>
-                        <button type="button" onclick="updateSelectedToothStatus('E')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-slate-850 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-300 transition">
+                        <button type="submit" form="odontogram-3d-htmx-form" onclick="updateSelectedToothStatus('E')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-slate-850 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-300 transition">
                             <span class="w-2.5 h-2.5 rounded-full bg-slate-600 border border-slate-400 opacity-60"></span>
                             Extracción
                         </button>
@@ -85,8 +85,8 @@
                 <!-- Notas y observaciones -->
                 <div class="space-y-1.5">
                     <label for="tooth-notes" class="text-xs text-slate-500 block">Observaciones Clínicas:</label>
-                    <textarea id="tooth-notes" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-300 focus:outline-none focus:border-teal-500 placeholder-slate-700" placeholder="Escribe notas clínicas sobre esta pieza..."></textarea>
-                    <button type="button" onclick="saveToothNotes()" class="w-full py-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs rounded-lg shadow transition flex items-center justify-center gap-1">
+                    <textarea id="tooth-notes" name="notes" form="odontogram-3d-htmx-form" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-300 focus:outline-none focus:border-teal-500 placeholder-slate-700" placeholder="Escribe notas clínicas sobre esta pieza..."></textarea>
+                    <button type="submit" form="odontogram-3d-htmx-form" onclick="saveToothNotes()" class="w-full py-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs rounded-lg shadow transition flex items-center justify-center gap-1">
                         <i data-lucide="save" class="w-3.5 h-3.5"></i>
                         Guardar Observaciones
                     </button>
@@ -100,9 +100,15 @@
     </div>
 </div>
 
+<form id="odontogram-3d-htmx-form" class="hidden" hx-swap="none" hx-trigger="submit" hx-indicator="#saving-indicator" method="post">
+    <input type="hidden" name="fdi" id="odontogram-3d-form-fdi" value="">
+    <input type="hidden" name="status" id="odontogram-3d-form-status" value="S">
+</form>
+
 <!-- Cargar Three.js y OrbitControls desde CDN -->
 <script src="https://unpkg.com/three@0.152.2/build/three.min.js"></script>
 <script src="https://unpkg.com/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
+<script src="/static/js/offline-sync.js"></script>
 
 <script>
     // Variables globales de la escena 3D
@@ -112,11 +118,20 @@
     let selectedFdi = null;
     let hoveredToothGroup = null;
     let raycaster, mouse;
+    let odontogramSocket = null;
+    let odontogramSocketRetryDelay = 1000;
+    const odontogramSocketRetryMax = 30000;
+    let offlineSync = null;
     
     // Obtener los estados iniciales serializados de la base de datos
     const patientPk = "{{ patient.pk|default:'0' }}";
     const initialToothStates = JSON.parse('{{ tooth_status_json|safe }}');
     
+    if (window.OfflineSync && !offlineSync) {
+        offlineSync = new OfflineSync(patientPk);
+        offlineSync.init().catch((err) => console.error('OfflineSync init error:', err));
+    }
+
     // Definición de colores clínicos para mallas Three.js
     const CLINICAL_COLORS = {
         'S': { crown: 0xf8fafc, root: 0xffd1dc, opacity: 1.0 }, // Sano
@@ -218,6 +233,7 @@
         // 10. Pintar dientes según base de datos e inicializar SVG 2D
         syncTeethColorsFromInitialData();
         syncSVGFromStates();
+        initOdontogramWebSocket();
     }
     
     // Generar mallas dentales en dos parábolas (arcadas)
@@ -372,6 +388,70 @@
         });
     }
 
+    function initOdontogramWebSocket() {
+        if (!window.WebSocket || odontogramSocket) return;
+        connectOdontogramSocket();
+    }
+
+    function connectOdontogramSocket() {
+        const host = window.location.host;
+        const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        const socketUrl = `${protocol}://${host}/ws/odontogram/${patientPk}/`;
+
+        try {
+            odontogramSocket = new WebSocket(socketUrl);
+        } catch (error) {
+            console.error('Error creando WebSocket:', error);
+            scheduleReconnect();
+            return;
+        }
+
+        odontogramSocket.onopen = () => {
+            odontogramSocketRetryDelay = 1000;
+            console.info('WebSocket odontogram conectado:', socketUrl);
+        };
+
+        odontogramSocket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'tooth_update' && typeof data.payload === 'object') {
+                    const fdi = parseInt(data.payload.fdi, 10);
+                    const status = String(data.payload.status || 'S');
+                    const group = teethMap.get(fdi);
+                    if (group) {
+                        group.userData.status = status;
+                        updateToothColorVisuals(group, status);
+                        if (typeof syncSVGFromStates === 'function') {
+                            syncSVGFromStates();
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Error parseando evento WebSocket:', err);
+            }
+        };
+
+        odontogramSocket.onerror = (event) => {
+            console.error('WebSocket odontogram error:', event);
+        };
+
+        odontogramSocket.onclose = (event) => {
+            console.warn('WebSocket odontogram cerrado:', event.code, event.reason);
+            odontogramSocket = null;
+            scheduleReconnect();
+        };
+    }
+
+    function scheduleReconnect() {
+        const delay = Math.min(odontogramSocketRetryDelay, odontogramSocketRetryMax);
+        setTimeout(() => {
+            if (!odontogramSocket) {
+                connectOdontogramSocket();
+            }
+        }, delay);
+        odontogramSocketRetryDelay = Math.min(odontogramSocketRetryDelay * 2, odontogramSocketRetryMax);
+    }
+
     // Manejar redimensionamiento del visor
     function onWindowResize() {
         const viewport = document.getElementById('threejs-canvas-viewport');
@@ -490,6 +570,8 @@
         document.getElementById('tooth-notes').value = group.userData.notes || '';
         
         updateStatusBadge(group.userData.status);
+        updateOdontogramFormFields();
+        setOdontogramFormAction(selectedFdi);
     }
     
     function updateStatusBadge(status) {
@@ -507,44 +589,23 @@
         badge.className = `inline-block px-2.5 py-1 text-xs font-semibold rounded-full border ${settings.class}`;
     }
     
-    // Cambiar estado y guardar asíncronamente
+    // Cambiar estado y enviar declarativamente con HTMX
     function updateSelectedToothStatus(status) {
         if (!selectedFdi || !selectedToothGroup) return;
         
-        showSaving(true);
-        
-        // Actualizar visualmente de inmediato para mejorar feedback UX
+        selectedToothGroup.userData.status = status;
         updateToothColorVisuals(selectedToothGroup, status);
         updateStatusBadge(status);
         syncSVGFromStates();
-        
-        // Petición AJAX/Fetch al endpoint de Django
-        const url = `/pacientes/${patientPk}/diente/${selectedFdi}/estado/`;
-        
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                status: status,
-                notes: selectedToothGroup.userData.notes || ''
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
+        updateOdontogramFormFields();
+
+        if (!navigator.onLine && offlineSync) {
+            offlineSync.updateOnlineStatus(false);
             showSaving(false);
-            if (data.success) {
-                selectedToothGroup.userData.status = data.status;
-            } else {
-                alert('Error al guardar el diagnóstico: ' + data.error);
-            }
-        })
-        .catch(error => {
-            showSaving(false);
-            console.error('Error de red al actualizar diente:', error);
-        });
+            return;
+        }
+
+        showSaving(true);
     }
     
     // Guardar notas clínicas asociadas al diente
@@ -553,37 +614,15 @@
         
         const notes = document.getElementById('tooth-notes').value;
         selectedToothGroup.userData.notes = notes;
-        
+        updateOdontogramFormFields();
+
+        if (!navigator.onLine && offlineSync) {
+            offlineSync.updateOnlineStatus(false);
+            showSaving(false);
+            return;
+        }
+
         showSaving(true);
-        
-        const url = `/pacientes/${patientPk}/diente/${selectedFdi}/estado/`;
-        
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                status: selectedToothGroup.userData.status,
-                notes: notes
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            showSaving(false);
-            if (data.success) {
-                selectedToothGroup.userData.notes = data.notes;
-                // Pequeña notificación visual
-                alert('✓ Observaciones para la pieza ' + selectedFdi + ' guardadas exitosamente.');
-            } else {
-                alert('Error al guardar notas: ' + data.error);
-            }
-        })
-        .catch(error => {
-            showSaving(false);
-            console.error('Error al guardar notas clínicas:', error);
-        });
     }
     
     function showSaving(show) {
@@ -608,9 +647,67 @@
         }
         return cookieValue;
     }
-    
+
+    function setOdontogramFormAction(fdi) {
+        const form = document.getElementById('odontogram-3d-htmx-form');
+        if (!form) return;
+
+        const url = `/pacientes/${patientPk}/diente/${fdi}/estado/`;
+        form.setAttribute('action', url);
+        form.setAttribute('hx-post', url);
+        form.setAttribute('hx-headers', JSON.stringify({
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }));
+    }
+
+    function updateOdontogramFormFields() {
+        const fdiInput = document.getElementById('odontogram-3d-form-fdi');
+        const statusInput = document.getElementById('odontogram-3d-form-status');
+        const notesField = document.getElementById('tooth-notes');
+
+        if (fdiInput && selectedFdi) {
+            fdiInput.value = selectedFdi;
+        }
+        if (statusInput && selectedToothGroup) {
+            statusInput.value = selectedToothGroup.userData.status;
+        }
+        if (notesField && selectedToothGroup) {
+            notesField.value = selectedToothGroup.userData.notes || notesField.value;
+        }
+    }
+
+    function initHtmxOdontogramForm() {
+        const form = document.getElementById('odontogram-3d-htmx-form');
+        if (!form || !window.htmx) return;
+        form.setAttribute('hx-headers', JSON.stringify({
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }));
+        form.addEventListener('htmx:afterRequest', (event) => {
+            if (event.target !== form) return;
+            showSaving(false);
+            const xhr = event.detail && event.detail.xhr;
+            if (xhr && xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    const data = JSON.parse(xhr.responseText || '{}');
+                    if (!data.success) {
+                        alert('Error al guardar: ' + (data.error || 'Respuesta inválida'));
+                    }
+                } catch (err) {
+                    console.error('No se pudo parsear la respuesta HTMX:', err);
+                }
+            } else {
+                console.error('Error de red en la petición HTMX:', xhr);
+            }
+        });
+    }
+
     // Inicializar el entorno en la carga inicial
-    setTimeout(init3D, 150);
+    setTimeout(() => {
+        init3D();
+        initHtmxOdontogramForm();
+    }, 150);
 </script>
 
 <style>

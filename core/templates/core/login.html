@@ -25,7 +25,25 @@
             </div>
         </div>
         {% endif %}
+
+        <!-- Alertas para WebAuthn -->
+        <div id="webauthn-alert" class="hidden bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+            <div class="flex">
+                <div class="ml-3">
+                    <p id="webauthn-alert-message" class="text-sm text-blue-700"></p>
+                </div>
+            </div>
+        </div>
+
+        <div id="webauthn-error" class="hidden bg-red-50 border-l-4 border-red-500 p-4 rounded">
+            <div class="flex">
+                <div class="ml-3">
+                    <p id="webauthn-error-message" class="text-sm text-red-700"></p>
+                </div>
+            </div>
+        </div>
         
+        <!-- Formulario de autenticación tradicional -->
         <form class="mt-8 space-y-6" method="POST">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ next }}">
@@ -66,6 +84,51 @@
                 </button>
             </div>
         </form>
+
+        <!-- Divisor -->
+        <div class="relative">
+            <div class="absolute inset-0 flex items-center">
+                <div class="w-full border-t border-slate-300"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+                <span class="px-2 bg-white text-slate-500">O</span>
+            </div>
+        </div>
+
+        <!-- Opciones de autenticación biométrica -->
+        <div class="space-y-3" id="biometric-section" data-biometric>
+            <p class="text-center text-xs text-slate-600 font-semibold">
+                AUTENTICACIÓN BIOMÉTRICA
+            </p>
+
+            <button 
+                type="button" 
+                id="btn-biometric-login"
+                class="w-full flex items-center justify-center py-2 px-4 border border-teal-300 text-sm font-medium rounded-md text-teal-700 bg-teal-50 hover:bg-teal-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                data-biometric
+            >
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Entrar con Biometría
+            </button>
+
+            <button 
+                type="button" 
+                id="btn-biometric-register"
+                class="w-full flex items-center justify-center py-2 px-4 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-slate-50 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                data-biometric
+            >
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m0 0h6m-6 0h-6"></path>
+                </svg>
+                Registrar Biometría
+            </button>
+
+            <p class="text-xs text-slate-500 text-center mt-2">
+                Requiere usar tu huella dactilar o reconocimiento facial
+            </p>
+        </div>
         
         <div class="text-center mt-4">
             <p class="text-xs text-slate-500">
@@ -74,4 +137,141 @@
         </div>
     </div>
 </div>
+
+<!-- Cargar scripts de WebAuthn -->
+<script src="{% static 'js/webauthn.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const usernameInput = document.getElementById('username');
+        const btnBiometricLogin = document.getElementById('btn-biometric-login');
+        const btnBiometricRegister = document.getElementById('btn-biometric-register');
+        const alertDiv = document.getElementById('webauthn-alert');
+        const alertMessage = document.getElementById('webauthn-alert-message');
+        const errorDiv = document.getElementById('webauthn-error');
+        const errorMessage = document.getElementById('webauthn-error-message');
+
+        /**
+         * Muestra un mensaje de información
+         */
+        function showAlert(message) {
+            alertMessage.textContent = message;
+            alertDiv.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+        }
+
+        /**
+         * Muestra un mensaje de error
+         */
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorDiv.classList.remove('hidden');
+            alertDiv.classList.add('hidden');
+        }
+
+        /**
+         * Oculta mensajes
+         */
+        function hideMessages() {
+            alertDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+        }
+
+        /**
+         * Valida que el usuario esté ingresado
+         */
+        function validateUsername() {
+            const username = usernameInput.value.trim();
+            if (!username) {
+                showError('Por favor, ingresa tu usuario');
+                return null;
+            }
+            return username;
+        }
+
+        /**
+         * Maneja el login biométrico
+         */
+        btnBiometricLogin.addEventListener('click', async function () {
+            const username = validateUsername();
+            if (!username) return;
+
+            hideMessages();
+            btnBiometricLogin.disabled = true;
+            showAlert('Iniciando autenticación biométrica...');
+
+            try {
+                const result = await webAuthnManager.startAuthentication(username);
+
+                if (result.success) {
+                    showAlert('¡Autenticación exitosa! Redirigiendo...');
+                    setTimeout(() => {
+                        window.location.href = result.redirect || '/pacientes/';
+                    }, 1500);
+                } else {
+                    showError(
+                        result.error ||
+                        'Error en la autenticación biométrica'
+                    );
+                    btnBiometricLogin.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError(
+                    error.message ||
+                    'Error inesperado en la autenticación'
+                );
+                btnBiometricLogin.disabled = false;
+            }
+        });
+
+        /**
+         * Maneja el registro biométrico
+         */
+        btnBiometricRegister.addEventListener('click', async function () {
+            const username = validateUsername();
+            if (!username) return;
+
+            hideMessages();
+            btnBiometricRegister.disabled = true;
+            showAlert('Preparando registro biométrico...');
+
+            try {
+                const result = await webAuthnManager.startRegistration(username);
+
+                if (result.success) {
+                    showAlert(
+                        result.message +
+                        ' Ahora puedes usar tu biometría para entrar.'
+                    );
+                    btnBiometricRegister.disabled = false;
+                } else {
+                    showError(
+                        result.error ||
+                        'Error en el registro biométrico'
+                    );
+                    btnBiometricRegister.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError(
+                    error.message ||
+                    'Error inesperado en el registro'
+                );
+                btnBiometricRegister.disabled = false;
+            }
+        });
+
+        // Habilitar botones solo cuando hay usuario
+        usernameInput.addEventListener('input', function () {
+            const hasUsername = this.value.trim().length > 0;
+            btnBiometricLogin.disabled = !hasUsername;
+            btnBiometricRegister.disabled = !hasUsername;
+        });
+
+        // Estado inicial
+        btnBiometricLogin.disabled = true;
+        btnBiometricRegister.disabled = true;
+    });
+</script>
+
 {% endblock %}
