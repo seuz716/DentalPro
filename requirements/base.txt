@@ -1,2 +1,9 @@
 Django==4.2.13
 Pillow==10.0.0
+daphne==4.1.2
+channels==4.1.0
+channels-redis==4.2.1
+redis==5.0.4
+anthropic==0.26.0
+webauthn==2.2.0
+strawberry-graphql[django]

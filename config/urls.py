@@ -7,10 +7,14 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from strawberry.django.views import GraphQLView
+from pacientes.schema import schema
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls', namespace='core')),
     path('pacientes/', include('pacientes.urls', namespace='pacientes')),
+    path('graphql/', GraphQLView.as_view(schema=schema), name='graphql'),
 ]
 
 # Servir archivos de media en desarrollo

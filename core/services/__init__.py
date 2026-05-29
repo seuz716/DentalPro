@@ -49,3 +49,22 @@ def get_gemini_client():
     import google.generativeai as genai
     genai.configure(api_key=GEMINI_API_KEY)
     return genai
+
+# Configuración de Anthropic
+ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
+ANTHROPIC_MODEL = os.getenv('ANTHROPIC_MODEL', 'claude-3-5-sonnet-20241022')
+
+def get_anthropic_client():
+    """
+    Obtiene cliente configurado de Anthropic.
+    Requiere ANTHROPIC_API_KEY en variables de entorno.
+    """
+    if not ANTHROPIC_API_KEY:
+        raise ValueError(
+            "ANTHROPIC_API_KEY no configurada. "
+            "Añade a .env: ANTHROPIC_API_KEY=tu_clave"
+        )
+    
+    import anthropic
+    return anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
