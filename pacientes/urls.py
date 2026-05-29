@@ -13,4 +13,5 @@ urlpatterns = [
     path('nuevo/', views.PatientCreateView.as_view(), name='create'),
     path('<int:pk>/', views.PatientDetailView.as_view(), name='detail'),
     path('<int:pk>/editar/', views.PatientUpdateView.as_view(), name='update'),
+    path('<int:pk>/diente/<int:fdi>/estado/', views.ToothRecordUpdateView.as_view(), name='tooth_status'),
 ]

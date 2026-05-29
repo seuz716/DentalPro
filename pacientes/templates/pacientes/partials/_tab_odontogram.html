@@ -1,2 +1,62 @@
-<!-- Partial: Odontograma del paciente -->
-{% include 'core/components/_odontogram_svg.html' %}
+<!-- Tab: Odontograma del Paciente -->
+<div class="space-y-4">
+    <!-- Selector de Modo de Vista (Toggle) -->
+    <div class="flex items-center justify-between bg-white rounded-xl shadow p-4">
+        <div>
+            <h4 class="text-sm font-semibold text-slate-900">Tipo de Visualización</h4>
+            <p class="text-xs text-slate-500">Alterna entre el visor 3D interactivo y el plano 2D tradicional.</p>
+        </div>
+        <button
+            type="button"
+            id="toggle-odontogram-mode"
+            class="px-4 py-2 rounded-lg text-xs font-semibold bg-teal-600 hover:bg-teal-700 text-white transition flex items-center gap-2 shadow-sm"
+            onclick="toggleOdontogramMode()"
+        >
+            <i data-lucide="eye" class="w-4 h-4"></i>
+            <span id="toggle-odontogram-text">Cambiar a Vista 2D</span>
+        </button>
+    </div>
+
+    <!-- Contenedor del Odontograma 3D -->
+    <div id="odontogram-3d-view" class="block">
+        {% include 'core/components/_odontogram_3d.html' %}
+    </div>
+
+    <!-- Contenedor del Odontograma 2D (Escondido por defecto) -->
+    <div id="odontogram-2d-view" class="hidden">
+        {% include 'core/components/_odontogram_svg.html' %}
+    </div>
+</div>
+
+<script>
+    // Inicializar iconos de Lucide al cargar el parcial
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+    
+    function toggleOdontogramMode() {
+        const view3d = document.getElementById('odontogram-3d-view');
+        const view2d = document.getElementById('odontogram-2d-view');
+        const btnText = document.getElementById('toggle-odontogram-text');
+        
+        if (view3d.classList.contains('block')) {
+            // Cambiar a 2D
+            view3d.classList.remove('block');
+            view3d.classList.add('hidden');
+            view2d.classList.remove('hidden');
+            view2d.classList.add('block');
+            btnText.textContent = "Cambiar a Vista 3D";
+            // Forzar repintado de estados del SVG
+            if (typeof syncSVGFromStates === 'function') {
+                syncSVGFromStates();
+            }
+        } else {
+            // Cambiar a 3D
+            view2d.classList.remove('block');
+            view2d.classList.add('hidden');
+            view3d.classList.remove('hidden');
+            view3d.classList.add('block');
+            btnText.textContent = "Cambiar a Vista 2D";
+        }
+    }
+</script>

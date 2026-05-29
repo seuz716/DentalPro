@@ -1,0 +1,627 @@
+<!-- Componente: Odontograma 3D Premium (Sistema FDI) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 bg-slate-950 rounded-2xl p-6 shadow-2xl border border-slate-800" id="odontogram-3d-container">
+    
+    <!-- Canvas de Visualización 3D (Ocupa 2 de 3 columnas en pantallas grandes) -->
+    <div class="lg:col-span-2 relative bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shadow-inner flex flex-col justify-between" style="min-height: 480px;">
+        <!-- Canvas Viewport -->
+        <div id="threejs-canvas-viewport" class="w-full h-full absolute inset-0 cursor-grab active:cursor-grabbing"></div>
+        
+        <!-- Instrucciones en pantalla / Capa superior flotante -->
+        <div class="absolute top-4 left-4 pointer-events-none z-10 bg-slate-900/80 backdrop-blur border border-slate-700/50 rounded-lg p-3 text-xs text-slate-300 max-w-xs shadow-lg">
+            <span class="font-bold text-teal-400 block mb-1">🎮 Navegación 3D</span>
+            <ul class="space-y-1 list-disc pl-4 text-slate-400">
+                <li><strong>Rotar:</strong> Clic izquierdo + arrastrar</li>
+                <li><strong>Zoom:</strong> Rueda del ratón</li>
+                <li><strong>Desplazar:</strong> Clic derecho + arrastrar</li>
+                <li><strong>Seleccionar:</strong> Clic sobre un diente</li>
+            </ul>
+        </div>
+
+        <!-- Indicador de carga de red -->
+        <div id="saving-indicator" class="absolute top-4 right-4 pointer-events-none z-10 bg-teal-500 text-white font-semibold text-xs px-3 py-1.5 rounded-full shadow-lg opacity-0 transition-opacity duration-200 flex items-center gap-1.5">
+            <svg class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Guardando...</span>
+        </div>
+    </div>
+    
+    <!-- Panel Lateral de Control Clínico (1 columna) -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between text-slate-100" id="odontogram-control-panel">
+        <div>
+            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">
+                Pieza Seleccionada
+            </h3>
+            
+            <!-- Estado inicial: Ningún diente seleccionado -->
+            <div id="no-tooth-selected" class="py-12 text-center text-slate-500">
+                <i data-lucide="info" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+                <p class="text-xs">Selecciona un diente en el visor 3D para inspeccionar o modificar su estado clínico.</p>
+            </div>
+            
+            <!-- Detalles del diente activo (Escondido por defecto) -->
+            <div id="tooth-details" class="hidden space-y-5">
+                <div>
+                    <span id="selected-tooth-fdi" class="inline-block px-3 py-1 rounded bg-teal-950 text-teal-400 border border-teal-800 text-lg font-bold mb-2">
+                        --
+                    </span>
+                    <h4 id="selected-tooth-name" class="text-base font-bold text-slate-100 leading-tight">
+                        Seleccione una pieza
+                    </h4>
+                </div>
+                
+                <!-- Insignia del estado actual -->
+                <div>
+                    <span class="text-xs text-slate-500 block mb-1">Estado Actual:</span>
+                    <span id="selected-tooth-status-badge" class="inline-block px-2.5 py-1 text-xs font-semibold rounded-full border">
+                        --
+                    </span>
+                </div>
+                
+                <!-- Controles de cambio de estado -->
+                <div class="space-y-2">
+                    <span class="text-xs text-slate-500 block mb-1">Registrar Diagnóstico / Tratamiento:</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" onclick="updateSelectedToothStatus('S')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-slate-850 hover:bg-slate-800 border border-slate-700 text-teal-400 hover:text-teal-300 transition">
+                            <span class="w-2.5 h-2.5 rounded-full bg-slate-400 border border-slate-200"></span>
+                            Sano
+                        </button>
+                        <button type="button" onclick="updateSelectedToothStatus('C')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-slate-850 hover:bg-slate-800 border border-slate-700 text-red-400 hover:text-red-300 transition">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-500 border border-red-300"></span>
+                            Caries
+                        </button>
+                        <button type="button" onclick="updateSelectedToothStatus('R')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-slate-850 hover:bg-slate-800 border border-slate-700 text-yellow-400 hover:text-yellow-300 transition">
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 border border-yellow-200"></span>
+                            Restaurado
+                        </button>
+                        <button type="button" onclick="updateSelectedToothStatus('E')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-slate-850 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-300 transition">
+                            <span class="w-2.5 h-2.5 rounded-full bg-slate-600 border border-slate-400 opacity-60"></span>
+                            Extracción
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Notas y observaciones -->
+                <div class="space-y-1.5">
+                    <label for="tooth-notes" class="text-xs text-slate-500 block">Observaciones Clínicas:</label>
+                    <textarea id="tooth-notes" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-300 focus:outline-none focus:border-teal-500 placeholder-slate-700" placeholder="Escribe notas clínicas sobre esta pieza..."></textarea>
+                    <button type="button" onclick="saveToothNotes()" class="w-full py-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs rounded-lg shadow transition flex items-center justify-center gap-1">
+                        <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                        Guardar Observaciones
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-6 border-t border-slate-800 pt-4 text-[10px] text-slate-500">
+            <strong>DentalPro 3D Visor:</strong> Basado en el Sistema FDI estándar de los 32 dientes permanentes en arco parabólico tridimensional.
+        </div>
+    </div>
+</div>
+
+<!-- Cargar Three.js y OrbitControls desde CDN -->
+<script src="https://unpkg.com/three@0.152.2/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+    // Variables globales de la escena 3D
+    let scene, camera, renderer, controls;
+    let teethMap = new Map(); // Mapa de FDI -> Grupo de Diente
+    let selectedToothGroup = null;
+    let selectedFdi = null;
+    let hoveredToothGroup = null;
+    let raycaster, mouse;
+    
+    // Obtener los estados iniciales serializados de la base de datos
+    const patientPk = "{{ patient.pk|default:'0' }}";
+    const initialToothStates = JSON.parse('{{ tooth_status_json|safe }}');
+    
+    // Definición de colores clínicos para mallas Three.js
+    const CLINICAL_COLORS = {
+        'S': { crown: 0xf8fafc, root: 0xffd1dc, opacity: 1.0 }, // Sano
+        'C': { crown: 0xef4444, root: 0xffd1dc, opacity: 1.0 }, // Caries
+        'R': { crown: 0xeab308, root: 0xffd1dc, opacity: 1.0 }, // Restaurado
+        'E': { crown: 0x475569, root: 0x475569, opacity: 0.12 }  // Extracción (Espectral)
+    };
+
+    // Nombres de piezas FDI
+    function getToothOfficialName(fdi) {
+        const quad = Math.floor(fdi / 10);
+        const pos = fdi % 10;
+        
+        let quadName = "";
+        switch(quad) {
+            case 1: quadName = "Superior Derecho (Cuadrante 1)"; break;
+            case 2: quadName = "Superior Izquierdo (Cuadrante 2)"; break;
+            case 3: quadName = "Inferior Izquierdo (Cuadrante 3)"; break;
+            case 4: quadName = "Inferior Derecho (Cuadrante 4)"; break;
+        }
+        
+        let posName = "";
+        switch(pos) {
+            case 1: posName = "Incisivo Central"; break;
+            case 2: posName = "Incisivo Lateral"; break;
+            case 3: posName = "Canino"; break;
+            case 4: posName = "Primer Premolar"; break;
+            case 5: posName = "Segundo Premolar"; break;
+            case 6: posName = "Primer Molar"; break;
+            case 7: posName = "Segundo Molar"; break;
+            case 8: posName = "Tercer Molar (Cordal)"; break;
+        }
+        
+        return `${posName} ${quadName}`;
+    }
+
+    // Inicializar el entorno 3D
+    function init3D() {
+        const viewport = document.getElementById('threejs-canvas-viewport');
+        if (!viewport) return;
+        
+        // 1. Crear Escena
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0f172a); // Fondo oscuro slate-900
+        
+        // 2. Crear Cámara
+        camera = new THREE.PerspectiveCamera(45, viewport.clientWidth / viewport.clientHeight, 0.1, 100);
+        camera.position.set(0, 5, 12); // Vista frontal y ligeramente elevada
+        
+        // 3. Crear Renderizador
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        
+        // Limpiar contenedor e insertar canvas
+        viewport.innerHTML = '';
+        viewport.appendChild(renderer.domElement);
+        
+        // 4. Luces para visualización volumétrica y sombreado
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+        
+        const dirLightTop = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLightTop.position.set(0, 10, 5);
+        scene.add(dirLightTop);
+        
+        const dirLightBottom = new THREE.DirectionalLight(0xffffff, 0.3);
+        dirLightBottom.position.set(0, -10, -5);
+        scene.add(dirLightBottom);
+
+        const pointLightCenter = new THREE.PointLight(0xffffff, 0.3, 20);
+        pointLightCenter.position.set(0, 0, 2);
+        scene.add(pointLightCenter);
+        
+        // 5. Controles de órbita
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 3;
+        controls.maxDistance = 25;
+        controls.maxPolarAngle = Math.PI / 1.8; // Evitar rotar totalmente abajo
+        
+        // 6. Configurar Raycaster
+        raycaster = new THREE.Raycaster();
+        mouse = new THREE.Vector2();
+        
+        // 7. Generar las arcadas dentales proceduralmente
+        generateDentalArches();
+        
+        // 8. Escuchar eventos
+        viewport.addEventListener('click', onViewportClick, false);
+        viewport.addEventListener('mousemove', onViewportMouseMove, false);
+        window.addEventListener('resize', onWindowResize, false);
+        
+        // 9. Ejecutar ciclo de animación
+        animate();
+
+        // 10. Pintar dientes según base de datos e inicializar SVG 2D
+        syncTeethColorsFromInitialData();
+        syncSVGFromStates();
+    }
+    
+    // Generar mallas dentales en dos parábolas (arcadas)
+    function generateDentalArches() {
+        const radius = 4.0;
+        const depthFactor = 1.35;
+        
+        // Estructuras geométricas comunes para evitar re-creación
+        const crownGeometry = new THREE.BoxGeometry(0.55, 0.55, 0.55);
+        const rootGeometry = new THREE.ConeGeometry(0.2, 0.8, 5);
+        
+        // Lista ordenada de dientes para la curva (16 piezas de derecha a izquierda del doctor)
+        // Arcada Superior (18 a 11, luego 21 a 28)
+        const upperTeethFDI = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
+        // Arcada Inferior (48 a 41, luego 31 a 38)
+        const lowerTeethFDI = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
+        
+        // Construir arcada superior (Y positivo, raíces apuntando arriba)
+        createArch(upperTeethFDI, 0.9, true);
+        
+        // Construir arcada inferior (Y negativo, raíces apuntando abajo)
+        createArch(lowerTeethFDI, -0.9, false);
+        
+        function createArch(fdiList, yPos, isUpper) {
+            fdiList.forEach((fdi, index) => {
+                // Mapear ángulo de -PI/2 a PI/2
+                const theta = -Math.PI / 2 + (index / (fdiList.length - 1)) * Math.PI;
+                
+                // Coordenadas de la parábola
+                const x = radius * Math.sin(theta);
+                const z = -radius * Math.cos(theta) * depthFactor;
+                
+                // Grupo principal del diente
+                const toothGroup = new THREE.Group();
+                toothGroup.name = `tooth_${fdi}`;
+                toothGroup.userData = { fdi: fdi, status: 'S', notes: '' };
+                
+                // Mallas
+                const crownMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xf8fafc,
+                    roughness: 0.1,
+                    metalness: 0.05,
+                    transparent: true,
+                    opacity: 1.0
+                });
+                const rootMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xffd1dc,
+                    roughness: 0.8,
+                    transparent: true,
+                    opacity: 1.0
+                });
+                
+                const crownMesh = new THREE.Mesh(crownGeometry, crownMaterial);
+                crownMesh.name = "crown";
+                toothGroup.add(crownMesh);
+                
+                const rootMesh = new THREE.Mesh(rootGeometry, rootMaterial);
+                rootMesh.name = "root";
+                
+                // Orientación de la raíz
+                if (isUpper) {
+                    rootMesh.position.y = 0.55;
+                    rootMesh.rotation.x = Math.PI; // Apuntar arriba
+                } else {
+                    rootMesh.position.y = -0.55; // Apuntar abajo
+                }
+                toothGroup.add(rootMesh);
+                
+                // Posicionar y rotar el diente para que mire hacia afuera de la arcada
+                toothGroup.position.set(x, yPos, z);
+                toothGroup.rotation.y = -theta;
+                
+                scene.add(toothGroup);
+                teethMap.set(fdi, toothGroup);
+            });
+        }
+    }
+    
+    // Ciclo de animación del renderizador
+    function animate() {
+        requestAnimationFrame(animate);
+        if (controls) controls.update();
+        if (renderer && scene && camera) renderer.render(scene, camera);
+    }
+    
+    // Cambiar colores basado en los estados recuperados de la DB
+    function syncTeethColorsFromInitialData() {
+        for (const [fdiStr, status] of Object.entries(initialToothStates)) {
+            const fdi = parseInt(fdiStr);
+            const group = teethMap.get(fdi);
+            if (group) {
+                group.userData.status = status;
+                updateToothColorVisuals(group, status);
+            }
+        }
+    }
+    
+    // Actualizar la apariencia de las mallas 3D de una pieza dental según su estado
+    function updateToothColorVisuals(group, status) {
+        const settings = CLINICAL_COLORS[status] || CLINICAL_COLORS['S'];
+        
+        group.userData.status = status;
+        
+        group.traverse((child) => {
+            if (child.isMesh) {
+                child.material.color.setHex(child.name === 'crown' ? settings.crown : settings.root);
+                child.material.opacity = settings.opacity;
+                child.material.transparent = settings.opacity < 1.0;
+                child.material.needsUpdate = true;
+            }
+        });
+    }
+    
+    // Sincronizar colores en el SVG 2D tradicional para retrocompatibilidad
+    function syncSVGFromStates() {
+        // Encontrar todos los elementos SVG de diente
+        document.querySelectorAll('#odontogram-svg .tooth-group').forEach((svgGroup) => {
+            const fdi = parseInt(svgGroup.getAttribute('data-fdi'));
+            // Determinar estado actual (desde el mapa de Threejs o initialToothStates)
+            let status = 'S';
+            if (teethMap.has(fdi)) {
+                status = teethMap.get(fdi).userData.status;
+            } else if (initialToothStates[fdi]) {
+                status = initialToothStates[fdi];
+            }
+            
+            // Colorear las caras del SVG (polígonos del use)
+            // Para simplificar, buscamos los polígonos del use / defs o pintamos los elementos
+            // del template asignando clases
+            const polygonColors = {
+                'S': { fill: '#ffffff', stroke: '#cbd5e1' }, // Sano
+                'C': { fill: '#fee2e2', stroke: '#ef4444' }, // Caries (Rojo)
+                'R': { fill: '#fef9c3', stroke: '#eab308' }, // Restaurado (Amarillo)
+                'E': { fill: '#e2e8f0', stroke: '#94a3b8' }  // Extracción (Gris/Bajo contraste)
+            };
+            
+            const color = polygonColors[status] || polygonColors['S'];
+            
+            // Aplicar estilo de color
+            svgGroup.style.opacity = status === 'E' ? '0.35' : '1.0';
+            
+            // Si el SVG es interactivo, podemos inyectarle estilos inline a los hijos del defs mapeado,
+            // pero como define `#tooth-cross` en `<defs>` compartido por todos, es mejor inyectar
+            // un filtro o re-pintar usando inline properties a nivel de grupo o duplicando.
+            // Para hacerlo robusto e inline, aplicamos un color de relleno CSS al grupo SVG
+            // que tiña las mallas por CSS custom
+            const polygons = svgGroup.querySelectorAll('polygon, rect');
+            polygons.forEach((poly) => {
+                poly.style.fill = color.fill;
+                poly.style.stroke = color.stroke;
+            });
+        });
+    }
+
+    // Manejar redimensionamiento del visor
+    function onWindowResize() {
+        const viewport = document.getElementById('threejs-canvas-viewport');
+        if (!viewport || !camera || !renderer) return;
+        camera.aspect = viewport.clientWidth / viewport.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+    }
+    
+    // Detectar movimiento del cursor (Hover)
+    function onViewportMouseMove(event) {
+        const viewport = document.getElementById('threejs-canvas-viewport');
+        if (!viewport) return;
+        
+        // Calcular posición del ratón en coordenadas normalizadas del visor
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        
+        raycaster.setFromCamera(mouse, camera);
+        
+        // Encontrar objetos colisionados (mallas hijas de grupos de dientes)
+        const intersects = raycaster.intersectObjects(scene.children, true);
+        
+        if (intersects.length > 0) {
+            // Obtener el grupo padre "tooth_XX"
+            let object = intersects[0].object;
+            let group = object.parent;
+            
+            if (group && group.name.startsWith('tooth_')) {
+                if (hoveredToothGroup !== group) {
+                    // Restaurar previo hover
+                    resetHoveredTooth();
+                    
+                    // Aplicar nuevo hover (resaltar emisividad de la corona)
+                    hoveredToothGroup = group;
+                    document.body.style.cursor = 'pointer';
+                    
+                    const crown = group.getObjectByName('crown');
+                    if (crown && crown.userData.status !== 'E') {
+                        crown.material.emissive.setHex(0x115e59); // Brillo verde azulado
+                    }
+                }
+                return;
+            }
+        }
+        
+        // Si no colisiona con nada
+        resetHoveredTooth();
+    }
+    
+    function resetHoveredTooth() {
+        if (hoveredToothGroup) {
+            const crown = hoveredToothGroup.getObjectByName('crown');
+            // Si el diente actual es el seleccionado, mantener su brillo de selección
+            if (crown) {
+                if (selectedToothGroup === hoveredToothGroup) {
+                    crown.material.emissive.setHex(0x134e4a); // Brillo verde oscuro de selección
+                } else {
+                    crown.material.emissive.setHex(0x000000); // Apagar brillo
+                }
+            }
+            hoveredToothGroup = null;
+            document.body.style.cursor = 'default';
+        }
+    }
+    
+    // Detectar clic y seleccionar diente
+    function onViewportClick(event) {
+        const viewport = document.getElementById('threejs-canvas-viewport');
+        if (!viewport) return;
+        
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(scene.children, true);
+        
+        if (intersects.length > 0) {
+            let group = intersects[0].object.parent;
+            if (group && group.name.startsWith('tooth_')) {
+                selectTooth(group);
+                return;
+            }
+        }
+    }
+    
+    // Seleccionar diente clínicamente
+    function selectTooth(group) {
+        // Apagar selección previa
+        if (selectedToothGroup) {
+            const oldCrown = selectedToothGroup.getObjectByName('crown');
+            if (oldCrown) oldCrown.material.emissive.setHex(0x000000);
+        }
+        
+        selectedToothGroup = group;
+        selectedFdi = group.userData.fdi;
+        
+        // Resaltar corona seleccionada
+        const crown = group.getObjectByName('crown');
+        if (crown) {
+            crown.material.emissive.setHex(0x134e4a); // Emisión de selección
+        }
+        
+        // Mostrar detalles en el panel de control
+        document.getElementById('no-tooth-selected').classList.add('hidden');
+        
+        const detailsContainer = document.getElementById('tooth-details');
+        detailsContainer.classList.remove('hidden');
+        
+        document.getElementById('selected-tooth-fdi').textContent = selectedFdi;
+        document.getElementById('selected-tooth-name').textContent = getToothOfficialName(selectedFdi);
+        
+        // Cargar observaciones
+        document.getElementById('tooth-notes').value = group.userData.notes || '';
+        
+        updateStatusBadge(group.userData.status);
+    }
+    
+    function updateStatusBadge(status) {
+        const badge = document.getElementById('selected-tooth-status-badge');
+        
+        const config = {
+            'S': { text: 'Sano / Normal', class: 'bg-teal-950 text-teal-400 border-teal-800' },
+            'C': { text: 'Caries Activa', class: 'bg-red-950 text-red-400 border-red-800' },
+            'R': { text: 'Restauración', class: 'bg-yellow-950 text-yellow-400 border-yellow-800' },
+            'E': { text: 'Extraído / Ausente', class: 'bg-slate-800 text-slate-400 border-slate-700' }
+        };
+        
+        const settings = config[status] || config['S'];
+        badge.textContent = settings.text;
+        badge.className = `inline-block px-2.5 py-1 text-xs font-semibold rounded-full border ${settings.class}`;
+    }
+    
+    // Cambiar estado y guardar asíncronamente
+    function updateSelectedToothStatus(status) {
+        if (!selectedFdi || !selectedToothGroup) return;
+        
+        showSaving(true);
+        
+        // Actualizar visualmente de inmediato para mejorar feedback UX
+        updateToothColorVisuals(selectedToothGroup, status);
+        updateStatusBadge(status);
+        syncSVGFromStates();
+        
+        // Petición AJAX/Fetch al endpoint de Django
+        const url = `/pacientes/${patientPk}/diente/${selectedFdi}/estado/`;
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                status: status,
+                notes: selectedToothGroup.userData.notes || ''
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            showSaving(false);
+            if (data.success) {
+                selectedToothGroup.userData.status = data.status;
+            } else {
+                alert('Error al guardar el diagnóstico: ' + data.error);
+            }
+        })
+        .catch(error => {
+            showSaving(false);
+            console.error('Error de red al actualizar diente:', error);
+        });
+    }
+    
+    // Guardar notas clínicas asociadas al diente
+    function saveToothNotes() {
+        if (!selectedFdi || !selectedToothGroup) return;
+        
+        const notes = document.getElementById('tooth-notes').value;
+        selectedToothGroup.userData.notes = notes;
+        
+        showSaving(true);
+        
+        const url = `/pacientes/${patientPk}/diente/${selectedFdi}/estado/`;
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                status: selectedToothGroup.userData.status,
+                notes: notes
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            showSaving(false);
+            if (data.success) {
+                selectedToothGroup.userData.notes = data.notes;
+                // Pequeña notificación visual
+                alert('✓ Observaciones para la pieza ' + selectedFdi + ' guardadas exitosamente.');
+            } else {
+                alert('Error al guardar notas: ' + data.error);
+            }
+        })
+        .catch(error => {
+            showSaving(false);
+            console.error('Error al guardar notas clínicas:', error);
+        });
+    }
+    
+    function showSaving(show) {
+        const indicator = document.getElementById('saving-indicator');
+        if (indicator) {
+            indicator.style.opacity = show ? '1' : '0';
+        }
+    }
+    
+    // Helper para obtener la Cookie CSRF de Django
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Inicializar el entorno en la carga inicial
+    setTimeout(init3D, 150);
+</script>
+
+<style>
+    /* Estilos estéticos de soporte de tema oscuro */
+    #odontogram-3d-container {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    .bg-slate-850 {
+        background-color: #1e293b;
+    }
+    .bg-slate-850:hover {
+        background-color: #334155;
+    }
+</style>

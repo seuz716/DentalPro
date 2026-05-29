@@ -254,3 +254,51 @@ class Patient(models.Model):
                 dv_calculado = 0
         
         return dv_esperado == dv_calculado
+
+
+class ToothRecord(models.Model):
+    """
+    Registro del estado clínico de un diente específico para un paciente.
+    FDI especifica las piezas del 11 al 48.
+    """
+    STATUS_CHOICES = [
+        ('S', 'Sano'),
+        ('C', 'Caries'),
+        ('R', 'Restaurado'),
+        ('E', 'Extracción'),
+    ]
+    
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name='tooth_records',
+        verbose_name='Paciente'
+    )
+    fdi = models.IntegerField(
+        verbose_name='Número FDI',
+        help_text='Número identificador del diente (11-48)'
+    )
+    status = models.CharField(
+        max_length=1,
+        choices=STATUS_CHOICES,
+        default='S',
+        verbose_name='Estado'
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name='Notas / Observaciones'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de actualización'
+    )
+
+    class Meta:
+        unique_together = ('patient', 'fdi')
+        ordering = ['fdi']
+        verbose_name = 'Registro de Diente'
+        verbose_name_plural = 'Registros de Dientes'
+
+    def __str__(self) -> str:
+        return f"Paciente {self.patient.full_name} - Diente {self.fdi}: {self.get_status_display()}"
+

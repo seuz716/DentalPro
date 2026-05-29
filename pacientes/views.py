@@ -4,13 +4,16 @@ Implementa listado, búsqueda y detalles de pacientes con HTMX.
 """
 
 from django.shortcuts import render
+from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.db.models import Q
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.db import IntegrityError
-from .models import Patient
+from django.http import JsonResponse
+import json
+from .models import Patient, ToothRecord
 from .forms import PatientForm
 
 
@@ -127,11 +130,9 @@ class PatientDetailView(LoginRequiredMixin, DetailView):
             'odontogram': 'Odontograma',
         }
 
-        # Estado de dientes (JSON para el odontograma SVG).
-        # En producción, cargarlo desde un modelo ToothRecord relacionado:
-        #   tooth_records = patient.tooth_records.all()
-        #   context['tooth_status_json'] = json.dumps({r.fdi: r.status for r in tooth_records})
-        context['tooth_status_json'] = '{}'
+        # Estado de dientes (JSON para el odontograma)
+        tooth_records = self.object.tooth_records.all()
+        context['tooth_status_json'] = json.dumps({r.fdi: r.status for r in tooth_records})
 
         if context['active_tab'] == 'odontogram':
             # Generar datos de los 32 dientes FDI para el loop del template
@@ -238,3 +239,48 @@ class PatientUpdateView(LoginRequiredMixin, UpdateView):
             'Por favor, corrige los errores en el formulario.'
         )
         return super().form_invalid(form)
+
+
+class ToothRecordUpdateView(LoginRequiredMixin, View):
+    """
+    Vista para actualizar el estado clínico de un diente individual.
+    Retorna un JSON estructurado para el odontograma 3D y 2D.
+    """
+    def post(self, request, pk, fdi):
+        try:
+            patient = Patient.objects.get(pk=pk)
+            
+            # Soportar tanto payload JSON (Three.js) como x-www-form-urlencoded (HTMX)
+            if request.content_type == 'application/json':
+                data = json.loads(request.body)
+                status = data.get('status', 'S')
+                notes = data.get('notes', '')
+            else:
+                status = request.POST.get('status', 'S')
+                notes = request.POST.get('notes', '')
+
+            # Validar que el estado sea correcto
+            valid_statuses = [c[0] for c in ToothRecord.STATUS_CHOICES]
+            if status not in valid_statuses:
+                return JsonResponse({'success': False, 'error': 'Estado de diente inválido.'}, status=400)
+
+            # Actualizar o crear el registro
+            record, created = ToothRecord.objects.update_or_create(
+                patient=patient,
+                fdi=fdi,
+                defaults={'status': status, 'notes': notes}
+            )
+
+            return JsonResponse({
+                'success': True,
+                'fdi': fdi,
+                'status': record.status,
+                'status_display': record.get_status_display(),
+                'notes': record.notes
+            })
+            
+        except Patient.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Paciente no encontrado.'}, status=404)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
