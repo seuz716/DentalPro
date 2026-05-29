@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}DentalPro{% endblock %}</title>
 
+    <!-- PWA Web Manifest -->
+    <link rel="manifest" href="{% url 'manifest_json' %}">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -71,6 +74,15 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-slate-50">
+
+<!-- Banner de Conexión Offline flotante -->
+<div id="offline-banner" class="fixed bottom-4 right-4 z-50 bg-amber-600 border border-amber-500 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transition-transform duration-300 translate-y-24 pointer-events-none">
+    <i data-lucide="wifi-off" class="w-5 h-5 text-white animate-pulse"></i>
+    <div>
+        <h5 class="text-xs font-bold">Modo Sin Conexión Activo</h5>
+        <p class="text-[10px] text-amber-100">Los cambios se guardarán localmente y se sincronizarán al reconectar.</p>
+    </div>
+</div>
 
 <!-- ── Layout principal ───────────────────────────────────────── -->
 <div class="flex h-screen overflow-hidden">
